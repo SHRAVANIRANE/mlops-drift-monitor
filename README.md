@@ -1,6 +1,6 @@
 # MLOps Drift Monitor
 
-This repository is my hands-on MLOps learning project for building a small end-to-end drift monitoring workflow.
+This repository is about building a small end-to-end drift monitoring workflow.
 
 Right now the project is in active development. The current work includes:
 
@@ -20,8 +20,6 @@ The aim is to build a practical monitoring setup that can:
 - grow into a more complete MLOps portfolio project
 
 ## Current Status
-
-Based on the current repository contents:
 
 - notebook exploration is started in `notebooks/exploration.ipynb`
 - the dataset is available at `src/data/raw/bank-additional-full.csv`
@@ -73,32 +71,7 @@ If I keep updating this README as the project grows, this is a strong order to f
 7. add alerting or reporting
 8. document lessons learned and tradeoffs
 
-## Where To Write Learnings
-
-Use `docs/LEARNINGS.md` as your running project journal.
-
-That file is the best place for:
-
-- what you built each day
-- mistakes and debugging notes
-- MLOps concepts you learned
-- why you chose one approach over another
-- things to improve later
-
-Keep the README focused on the project overview, setup, architecture, and usage.
-Keep `docs/LEARNINGS.md` focused on your personal learning journey.
-
-## Next Documentation Updates To Add
-
-As the codebase grows, I can keep updating this README with:
-
-- setup instructions
-- how to run training
-- how to run drift checks
-- model performance summary
-- monitoring outputs
-- screenshots or sample reports
-- future improvements
+# `docs/LEARNINGS.md` is focused on my personal learning journey.
 
 ## Notes
 
