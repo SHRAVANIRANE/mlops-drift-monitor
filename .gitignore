@@ -12,3 +12,18 @@ src/data/processed/
 
 .DS_Store
 Thumbs.db
+
+# MLflow
+mlruns/
+mlflow.db
+mlartifacts/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
