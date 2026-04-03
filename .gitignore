@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+mlruns/
+notebooks/mlruns/
+notebooks/mlflow.db
+local_saved_models/
+
+src/data/processed/
+
+.DS_Store
+Thumbs.db
