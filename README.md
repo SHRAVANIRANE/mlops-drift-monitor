@@ -71,7 +71,7 @@ If I keep updating this README as the project grows, this is a strong order to f
 7. add alerting or reporting
 8. document lessons learned and tradeoffs
 
-# `docs/LEARNINGS.md` is focused on my personal learning journey.
+### `docs/LEARNINGS.md` is focused on my personal learning journey.
 
 ## Notes
 
