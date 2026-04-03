@@ -58,19 +58,6 @@ mlops-drift-monitor/
     `-- utils/
 ```
 
-## Suggested Build Order
-
-If I keep updating this README as the project grows, this is a strong order to follow:
-
-1. finish dataset exploration and target definition
-2. implement feature engineering and training pipeline
-3. evaluate baseline metrics
-4. save or register the trained model
-5. log incoming data batches
-6. implement drift detection checks
-7. add alerting or reporting
-8. document lessons learned and tradeoffs
-
 ### `docs/LEARNINGS.md` is focused on my personal learning journey.
 
 ## Notes
