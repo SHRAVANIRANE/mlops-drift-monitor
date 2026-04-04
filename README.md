@@ -2,8 +2,6 @@
 
 **Driftium** is an intelligent MLOps drift monitoring project that detects feature drift in production-like ML data and explains the likely root cause using a local LLM through Ollama.
 
-It is built as a hands-on portfolio project around drift detection, monitoring workflows, and explainable ML operations.
-
 ---
 
 ## Problem
@@ -200,7 +198,6 @@ That file is where I document:
 ## Author
 
 Shravani Rane  
-BSc Computer Science | AI/ML Enthusiast
 
 ---
 
