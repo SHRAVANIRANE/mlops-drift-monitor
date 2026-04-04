@@ -1,66 +1,207 @@
-# MLOps Drift Monitor
+# Driftium
 
-This repository is about building a small end-to-end drift monitoring workflow.
+**Driftium** is an intelligent MLOps drift monitoring project that detects feature drift in production-like ML data and explains the likely root cause using a local LLM through Ollama.
 
-Right now the project is in active development. The current work includes:
+It is built as a hands-on portfolio project around drift detection, monitoring workflows, and explainable ML operations.
 
-- exploring the bank marketing dataset
-- training a baseline scikit-learn pipeline
-- tracking experiments with MLflow
-- preparing modules for data logging, drift detection, model registry, and root cause analysis
+---
 
-## Project Goal
+## Problem
 
-The aim is to build a practical monitoring setup that can:
+Machine learning systems can silently degrade when incoming data changes over time.
 
-- train and evaluate a baseline model
-- log production-like data for monitoring
-- detect data drift over time
-- surface monitoring insights in a simple, reproducible workflow
-- grow into a more complete MLOps portfolio project
+Traditional monitoring can tell us that drift happened, but it often does not answer the most useful question:
 
-## Current Status
+> Why did this drift happen, and what should we do next?
 
-- notebook exploration is started in `notebooks/exploration.ipynb`
-- the dataset is available at `src/data/raw/bank-additional-full.csv`
-- MLflow has already been used for experiment tracking locally
-- the Python module structure is scaffolded, but most implementation files are still placeholders
+---
 
-## Current Tech Stack
+## Solution
 
-- Python
-- pandas
-- scikit-learn
-- MLflow
-- Jupyter Notebook
+Driftium combines:
+
+- statistical drift detection using the KS test
+- LLM-based explanation using Ollama
+- a modular Python project structure for MLOps experimentation
+
+---
+
+## Current Workflow
+
+The current implementation in [main.py](main.py) does the following:
+
+1. loads the bank marketing dataset from `src/data/raw/bank-additional-full.csv`
+2. creates a production-like dataset by filtering users with `age < 35`
+3. detects drift on numeric features using the KS test
+4. collects the drifted features
+5. sends those features and summary statistics to a local Ollama model
+6. prints a short root-cause explanation with recommended actions
+
+---
+
+## How It Works
+
+```text
+Reference Dataset
+        ->
+Simulated Production Slice
+        ->
+Feature-wise Drift Detection (KS Test)
+        ->
+Drifted Features
+        ->
+LLM Explanation via Ollama
+        ->
+Root Cause + Suggested Actions
+```
+
+---
+
+## Current Features
+
+- Detects numeric feature drift with SciPy KS test
+- Returns feature-level drift statistics and p-values
+- Identifies drifted columns automatically
+- Uses Ollama with `phi3:mini` for explanation generation
+- Simulates a realistic monitoring scenario with production-like data slicing
+- Keeps the project modular for future monitoring and registry extensions
+
+---
+
+## Current Example Output
+
+This is the current output pattern from the project run on April 4, 2026:
+
+```text
+Drifted features:
+['age', 'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']
+```
+
+```text
+LLM Explanation:
+The exact cause of the feature drift in 'age' is due to filtering out individuals older than 35 years from our dataset.
+This artificially lowers the mean age value and shifts multiple related feature distributions.
+
+Recommended actions:
+1. Retrain or rebalance the data with broader age coverage.
+2. Add continuous monitoring across demographic segments.
+```
+
+---
 
 ## Project Structure
 
 ```text
 mlops-drift-monitor/
-|-- README.md
 |-- main.py
+|-- README.md
 |-- requirements.txt
-|-- monitoring/
-|   |-- data_logger.py
-|   `-- drift_detection.py
+|-- docs/
+|   `-- LEARNINGS.md
 |-- notebooks/
 |   `-- exploration.ipynb
 `-- src/
     |-- data/
-    |   |-- raw/
-    |   `-- processed/
-    |-- features/
+    |   `-- raw/
+    |       `-- bank-additional-full.csv
     |-- llm/
-    |-- models/
+    |   |-- llm_explainer.py
+    |   `-- rca_agent.py
     |-- monitoring/
+    |   |-- data_logger.py
+    |   `-- drift_detection.py
+    |-- models/
     |-- registry/
     `-- utils/
 ```
 
-### `docs/LEARNINGS.md` is focused on my personal learning journey.
+Core files right now:
 
-## Notes
+- [main.py](main.py)
+- [src/monitoring/drift_detection.py](src/monitoring/drift_detection.py)
+- [src/llm/llm_explainer.py](src/llm/llm_explainer.py)
+- [docs/LEARNINGS.md](docs/LEARNINGS.md)
 
-- `requirements.txt` is currently empty and should be filled as dependencies are finalized
-- several source files are present as placeholders and can be documented as they are implemented
+---
+
+## Tech Stack
+
+- Python
+- Pandas
+- SciPy
+- Ollama
+- Jupyter Notebook
+- Scikit-learn and MLflow for broader experimentation in the project
+
+---
+
+## How To Run
+
+```powershell
+# Clone the repo
+git clone https://github.com/SHRAVANIRANE/mlops-drift-monitor.git
+cd mlops-drift-monitor
+
+# Create virtual environment
+python -m venv venv
+
+# Activate on Windows
+venv\Scripts\activate
+
+# Install current dependencies used by the project
+pip install pandas scipy ollama scikit-learn mlflow jupyter
+
+# Install the Ollama app/CLI locally, make sure it is running, then pull the model
+ollama pull phi3:mini
+
+# Run the project
+python main.py
+```
+
+If Ollama is not running locally, the drift detection part will still work, but the explanation step can return an LLM connection error.
+
+---
+
+## What This Project Demonstrates
+
+- practical drift detection in an ML monitoring workflow
+- root-cause style explanation using an LLM
+- modular project organization for MLOps systems
+- experimentation with production-style debugging scenarios
+
+---
+
+## Learning Notes
+
+Project learnings are tracked in [docs/LEARNINGS.md](docs/LEARNINGS.md).
+
+That file is where I document:
+
+- what I built
+- what I learned
+- debugging notes
+- decisions and tradeoffs
+- next steps
+
+---
+
+## Future Improvements
+
+- support categorical drift detection
+- log production batches through a real data logger
+- add model registry integration
+- build a Streamlit or React dashboard
+- add alerts for repeated drift events
+- support scheduled or real-time monitoring
+- deploy the system to cloud infrastructure
+
+---
+
+## Author
+
+Shravani Rane  
+BSc Computer Science | AI/ML Enthusiast
+
+---
+
+If you like this project, give it a star.
