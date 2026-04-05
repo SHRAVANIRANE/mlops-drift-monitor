@@ -1,6 +1,11 @@
 from src.monitoring.drift_detection import detect_drift
 import pandas as pd
 from src.llm.llm_explainer import generate_explanation
+import os
+
+def get_incoming_batch(df):
+    return df[df["age"]<35]
+    
 
 if __name__ == "__main__":
     df=pd.read_csv("src/data/raw/bank-additional-full.csv",sep=";")
@@ -12,7 +17,8 @@ if __name__ == "__main__":
     cat_cols=X.select_dtypes(include=["object"]).columns
 
     prod_df=df.copy()
-    prod_df=prod_df[prod_df["age"]<35]
+    
+    prod_df=get_incoming_batch(prod_df)
 
     train_age=df["age"] 
     prod_age=prod_df["age"] 
@@ -21,7 +27,11 @@ if __name__ == "__main__":
     print("Drift Detection Results:",drift_df)
 
     drifted_features=drift_df[drift_df["drift"]==True]["feature"].tolist()
-    print("Drifted features:",drifted_features)
+    
+    if len(drifted_features)>0:
+        print("\nDrift detected in features:", drifted_features)
+    else:
+        print("\nNo drift detected in numerical features.")
 
     prompt = f"""
     You are an ML monitoring expert.
@@ -45,3 +55,8 @@ if __name__ == "__main__":
 
     output = generate_explanation(prompt)
     print("\nLLM Explanation:\n", output)
+    
+    
+    os.makedirs("reports", exist_ok=True)
+    drift_df.to_csv("reports/drift_report.csv", index=False)
+    print("\nDrift report saved to reports/drift_report.csv")
