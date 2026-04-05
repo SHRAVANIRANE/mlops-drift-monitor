@@ -1,21 +1,5 @@
 # Project Learnings
 
-Use this file as your running log while you build the project.
-
-## How To Use This File
-
-After each work session, add short notes under the current date:
-
-- what you built
-- what broke
-- what you learned
-- what decision you made and why
-- what you want to do next
-
-## Entries
-
-## 2026-04-03
-
 ### What I worked on
 
 - Set up project structure for Driftora (MLOps drift monitoring system)
