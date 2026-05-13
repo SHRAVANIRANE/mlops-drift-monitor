@@ -3,6 +3,9 @@ import pandas as pd
 from src.llm.llm_explainer import generate_explanation
 import os
 
+#this function simulates getting a new batch of data in production, 
+# which has a different age distribution than the training data, 
+# causing drift in the "age" feature.
 def get_incoming_batch(df):
     return df[df["age"]<35]
     
