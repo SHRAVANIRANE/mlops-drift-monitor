@@ -1,72 +1,49 @@
 # Project Learnings
 
-### What I worked on
+## What I Built
 
-- Set up project structure for Driftora (MLOps drift monitoring system)
-- Loaded and explored UCI Bank Marketing dataset
-- Built preprocessing pipeline using ColumnTransformer (numerical + categorical)
-- Trained multiple models (Logistic Regression, Random Forest, Gradient Boosting)
-- Integrated MLflow for experiment tracking and model logging
-- Implemented model registry with versioning (v1 → v3)
-- Simulated production drift by filtering dataset (`age < 35`)
-- Built drift detection using KS test across numerical features
-- Converted drift results into structured DataFrame (`drift_df`)
-- Identified drifted features automatically
-- Designed prompt for LLM-based root cause analysis
-- Integrated local LLM using Ollama (`phi3:mini`)
-- Generated drift explanation + recommended actions
-- Refactored notebook code into modular Python files:
-  - `drift.py`
-  - `llm_explainer.py`
-  - `main.py`
+- Set up Driftium as an MLOps drift monitoring project.
+- Loaded and explored the UCI Bank Marketing dataset.
+- Simulated production drift by filtering the incoming batch to younger customers.
+- Built numeric drift detection with the two-sample KS test.
+- Added categorical drift detection with chi-square contingency tests and Cramer's V.
+- Converted drift outputs into a structured report with severity, p-values, sample counts, and shifted segments.
+- Built a Streamlit monitoring console with overview, feature analysis, RCA, and report export views.
+- Integrated local LLM explanations through Ollama and `phi3:mini`.
+- Added pytest coverage for core monitoring behavior.
+- Added GitHub Actions CI for automated test runs.
 
-- Ran full pipeline using CLI (`python -m src.main`)
+## What I Learned
 
----
+- Drift can propagate across correlated features, not just the feature used to create the shift.
+- KS tests work well for numeric distribution comparison, but categorical drift needs a separate test.
+- P-values are useful for flagging drift, while effect sizes are better for prioritizing alerts.
+- LLM RCA works best when the prompt includes structured evidence instead of raw data.
+- Local LLMs are useful for offline demos, but they need graceful error handling because the server may not be running.
+- A dashboard makes the project easier to explain because it shows the full monitoring workflow in one place.
 
-### What I learned
+## Problems I Hit
 
-- Drift can propagate across correlated features, not just the one modified
-- KS test is more reliable than simple statistics like mean comparison
-- MLflow enables experiment tracking, comparison, and model versioning
-- LLMs require structured prompts, not raw data, for meaningful output
-- Prompt engineering significantly improves explanation quality
-- Modular code design improves maintainability and debugging
-- Local LLMs (Ollama) are resource-intensive and require optimization
-- First LLM call is slow due to model loading (cold start problem)
+- File path issues while moving notebook logic into modules.
+- MLflow setup order issues during early experiments.
+- KeyErrors from overwriting a dataframe with a series during drift experiments.
+- Ollama response latency and local resource constraints.
+- Import errors caused by using the wrong virtual environment in VS Code.
+- Documentation getting out of sync after the dashboard was added.
 
----
+## Decisions I Made
 
-### Problems I hit
+- Use modular Python files instead of leaving the workflow only in notebooks.
+- Keep the CLI flow in `main.py` for a quick terminal demo.
+- Use Streamlit for a fast, interview-friendly monitoring interface.
+- Keep the LLM integration isolated in `src/llm/llm_explainer.py` so it can be swapped later.
+- Return structured drift reports instead of only printing drifted feature names.
+- Add tests around the monitoring logic before expanding into deployment work.
 
-- File path issues (`.scv` instead of `.csv`)
-- MLflow runs not appearing due to incorrect tracking URI setup
-- MLflow run errors due to incorrect ordering of configuration
-- KeyError in drift detection due to overwriting dataframe with series
-- Ollama responses slow or hanging due to limited RAM
-- VS Code import error (`ollama` not resolved) due to wrong interpreter
-- System lag when running ML + LLM together
+## Next Steps
 
----
-
-### Decisions I made
-
-- Use KS test for drift detection instead of heuristic methods
-- Use local LLM (Ollama) instead of API for cost-free and offline capability
-- Choose lightweight model (`phi3:mini`) due to hardware constraints
-- Keep LLM as a separate module to allow future swapping (OpenAI, HF, etc.)
-- Structure project into reusable modules instead of keeping everything in notebook
-- Limit LLM output (`num_predict`) for performance optimization
-- Use prompt constraints to avoid hallucinations
-
----
-
-### Next step
-
-- Add requirements.txt and finalize dependencies
-- Improve output formatting (structured report format)
-- Build simple UI (Streamlit) for demo
-- Add alerting mechanism for drift detection
-- Deploy project (local → cloud)
-- Enhance LLM explanations with better prompt templates
-- Prepare project for interviews (explanation + demo)
+- Log drift reports into MLflow as artifacts.
+- Add scheduled batch monitoring.
+- Add alert routing for repeated or high-severity drift.
+- Package the drift workflow as a reusable CLI command.
+- Deploy the dashboard to a cloud environment.

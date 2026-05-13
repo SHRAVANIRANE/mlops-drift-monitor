@@ -1,204 +1,147 @@
-# Driftium
+# Driftium - MLOps Drift Monitoring Console
 
-**Driftium** is an intelligent MLOps drift monitoring project that detects feature drift in production-like ML data and explains the likely root cause using a local LLM through Ollama.
+Driftium is an end-to-end MLOps project for monitoring data drift in production-like ML batches. It compares a reference dataset against an incoming batch, detects numeric and categorical feature drift, surfaces feature-level diagnostics in a Streamlit dashboard, and uses a local Ollama LLM to generate a concise root-cause summary.
 
----
+The project is built around the UCI Bank Marketing dataset and simulates a realistic monitoring incident by creating a shifted incoming batch.
 
-## Problem
+## Why This Project Is Resume Worthy
 
-Machine learning systems can silently degrade when incoming data changes over time.
+- Built a reusable drift detection module with statistical tests for both numeric and categorical features.
+- Designed an interactive Streamlit monitoring console with batch controls, feature diagnostics, report export, and RCA generation.
+- Added LLM-assisted root-cause analysis using local Ollama prompts grounded in drift metrics.
+- Added pytest coverage for core monitoring behavior.
+- Added GitHub Actions CI so tests run automatically on pushes and pull requests.
+- Structured the repo like a practical MLOps project, with room for MLflow, model registry, and deployment extensions.
 
-Traditional monitoring can tell us that drift happened, but it often does not answer the most useful question:
+## Core Capabilities
 
-> Why did this drift happen, and what should we do next?
+- Numeric drift detection with the two-sample Kolmogorov-Smirnov test.
+- Categorical drift detection with chi-square contingency tests and Cramer's V effect size.
+- Configurable drift p-value threshold.
+- Simulated production batch generation through an age-based population shift.
+- CSV upload flow for comparing custom incoming batches.
+- Feature analysis views for distribution shifts and category mix changes.
+- Local LLM RCA summaries through Ollama and `phi3:mini`.
+- Downloadable drift reports for audit and handoff.
 
----
-
-## Solution
-
-Driftium combines:
-
-- statistical drift detection using the KS test
-- LLM-based explanation using Ollama
-- a modular Python project structure for MLOps experimentation
-
----
-
-## Current Workflow
-
-The current implementation in [main.py](main.py) does the following:
-
-1. loads the bank marketing dataset from `src/data/raw/bank-additional-full.csv`
-2. creates a production-like dataset by filtering users with `age < 35`
-3. detects drift on numeric features using the KS test
-4. collects the drifted features
-5. sends those features and summary statistics to a local Ollama model
-6. prints a short root-cause explanation with recommended actions
-
----
-
-## How It Works
+## Architecture
 
 ```text
 Reference Dataset
-        ->
-Simulated Production Slice
-        ->
-Feature-wise Drift Detection (KS Test)
-        ->
-Drifted Features
-        ->
-LLM Explanation via Ollama
-        ->
-Root Cause + Suggested Actions
+        |
+        v
+Incoming Batch
+        |
+        v
+Feature Drift Detection
+  - KS test for numeric features
+  - Chi-square + Cramer's V for categorical features
+        |
+        v
+Streamlit Monitoring Console
+        |
+        v
+RCA Prompt Builder
+        |
+        v
+Local Ollama Explanation
 ```
-
----
-
-## Current Features
-
-- Detects numeric feature drift with SciPy KS test
-- Returns feature-level drift statistics and p-values
-- Identifies drifted columns automatically
-- Uses Ollama with `phi3:mini` for explanation generation
-- Simulates a realistic monitoring scenario with production-like data slicing
-- Keeps the project modular for future monitoring and registry extensions
-
----
-
-## Current Example Output
-
-This is the current output pattern from the project run on April 4, 2026:
-
-```text
-Drifted features:
-['age', 'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']
-```
-
-```text
-LLM Explanation:
-The exact cause of the feature drift in 'age' is due to filtering out individuals older than 35 years from our dataset.
-This artificially lowers the mean age value and shifts multiple related feature distributions.
-
-Recommended actions:
-1. Retrain or rebalance the data with broader age coverage.
-2. Add continuous monitoring across demographic segments.
-```
-
----
 
 ## Project Structure
 
 ```text
 mlops-drift-monitor/
-|-- main.py
-|-- README.md
+|-- app.py                         # Streamlit monitoring console
+|-- main.py                        # CLI demo workflow
 |-- requirements.txt
 |-- docs/
-|   `-- LEARNINGS.md
+|   |-- LEARNINGS.md
+|   `-- RESUME_BRIEF.md
 |-- notebooks/
 |   `-- exploration.ipynb
-`-- src/
-    |-- data/
-    |   `-- raw/
-    |       `-- bank-additional-full.csv
-    |-- llm/
-    |   |-- llm_explainer.py
-    |   `-- rca_agent.py
-    |-- monitoring/
-    |   |-- data_logger.py
-    |   `-- drift_detection.py
-    |-- models/
-    |-- registry/
-    `-- utils/
+|-- src/
+|   |-- data/raw/
+|   |   `-- bank-additional-full.csv
+|   |-- llm/
+|   |   |-- llm_explainer.py
+|   |   `-- rca_agent.py
+|   |-- monitoring/
+|   |   |-- data_logger.py
+|   |   `-- drift_detection.py
+|   |-- models/
+|   |-- registry/
+|   `-- utils/
+`-- tests/
+    `-- test_drift_detection.py
 ```
 
-Core files right now:
-
-- [main.py](main.py)
-- [src/monitoring/drift_detection.py](src/monitoring/drift_detection.py)
-- [src/llm/llm_explainer.py](src/llm/llm_explainer.py)
-- [docs/LEARNINGS.md](docs/LEARNINGS.md)
-
----
-
-## Tech Stack
-
-- Python
-- Pandas
-- SciPy
-- Ollama
-- Jupyter Notebook
-- Scikit-learn and MLflow for broader experimentation in the project
-
----
-
-## How To Run
+## Quickstart
 
 ```powershell
-# Clone the repo
-git clone https://github.com/SHRAVANIRANE/mlops-drift-monitor.git
-cd mlops-drift-monitor
-
-# Create virtual environment
 python -m venv venv
-
-# Activate on Windows
 venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-# Install current dependencies used by the project
-pip install pandas scipy ollama scikit-learn mlflow jupyter
+Run the dashboard:
 
-# Install the Ollama app/CLI locally, make sure it is running, then pull the model
-ollama pull phi3:mini
+```powershell
+streamlit run app.py
+```
 
-# Run the project
+Run the CLI workflow:
+
+```powershell
 python main.py
 ```
 
-If Ollama is not running locally, the drift detection part will still work, but the explanation step can return an LLM connection error.
+Run tests:
 
----
+```powershell
+pytest
+```
 
-## What This Project Demonstrates
+## LLM Setup
 
-- practical drift detection in an ML monitoring workflow
-- root-cause style explanation using an LLM
-- modular project organization for MLOps systems
-- experimentation with production-style debugging scenarios
+The drift detection and dashboard work without Ollama. The RCA tab needs a local Ollama server.
 
----
+```powershell
+ollama pull phi3:mini
+ollama serve
+```
 
-## Learning Notes
+If Ollama is not running, the app returns a clear LLM connection error while the monitoring reports still work.
 
-Project learnings are tracked in [docs/LEARNINGS.md](docs/LEARNINGS.md).
+## Example Monitoring Scenario
 
-That file is where I document:
+The default dashboard flow compares the full reference dataset against a simulated incoming batch filtered by age:
 
-- what I built
-- what I learned
-- debugging notes
-- decisions and tradeoffs
-- next steps
+```text
+incoming_batch = reference_dataset[reference_dataset["age"] < 35]
+```
 
----
+This creates a controlled population shift. The system detects direct drift in `age` and secondary drift in correlated economic, demographic, and categorical features.
 
-## Future Improvements
+## Testing
 
-- support categorical drift detection
-- log production batches through a real data logger
-- add model registry integration
-- build a Streamlit or React dashboard
-- add alerts for repeated drift events
-- support scheduled or real-time monitoring
-- deploy the system to cloud infrastructure
+The pytest suite covers:
 
----
+- numeric drift detection
+- stable numeric distributions
+- categorical mix drift
+- automatic object-column classification
+- empty incoming numeric batches
+
+## Interview Talking Points
+
+- Why KS test is useful for comparing numeric feature distributions.
+- Why categorical drift needs a different statistical test than numeric drift.
+- How effect size helps prioritize alerts beyond p-values.
+- How to ground LLM RCA prompts in observed metrics to reduce hallucinations.
+- How this could be extended with scheduled jobs, alerting, MLflow model metadata, and cloud deployment.
+
+See [docs/RESUME_BRIEF.md](docs/RESUME_BRIEF.md) for concise resume bullets and a project explanation script.
 
 ## Author
 
-Shravani Rane  
-
----
-
-If you like this project, give it a star.
+Shravani Rane
