@@ -1,65 +1,59 @@
-from src.monitoring.drift_detection import detect_drift
-import pandas as pd
-from src.llm.llm_explainer import generate_explanation
-import os
+from pathlib import Path
 
-#this function simulates getting a new batch of data in production, 
-# which has a different age distribution than the training data, 
-# causing drift in the "age" feature.
-def get_incoming_batch(df):
-    return df[df["age"]<35]
-    
+from src.llm.llm_explainer import UNAVAILABLE_MESSAGE, generate_explanation_result
+from src.monitoring.service import (
+    DEFAULT_REFERENCE_DATA_PATH,
+    build_monitoring_result,
+    build_rca_prompt,
+    load_reference_data,
+    simulate_incoming_batch,
+)
+
+
+def main() -> None:
+    age_threshold = 35
+    p_threshold = 0.05
+
+    reference_df = load_reference_data(DEFAULT_REFERENCE_DATA_PATH)
+    incoming_df = simulate_incoming_batch(reference_df, age_threshold)
+    monitoring_result = build_monitoring_result(reference_df, incoming_df, p_threshold)
+
+    print("Drift Detection Results:")
+    print(monitoring_result.display_df.to_string(index=False))
+
+    if monitoring_result.drifted_features:
+        print("\nDrift detected in features:", monitoring_result.drifted_features)
+    else:
+        print("\nNo drift detected in monitored features.")
+
+    focus_feature = (
+        monitoring_result.drifted_features[0]
+        if monitoring_result.drifted_features
+        else monitoring_result.monitored_columns[0]
+    )
+    incoming_source_description = (
+        f"Simulated batch created by filtering the dataset to rows where age < {age_threshold}."
+    )
+    prompt = build_rca_prompt(
+        monitoring_result.drift_df,
+        focus_feature,
+        incoming_source_description,
+    )
+    explanation = generate_explanation_result(prompt)
+
+    if explanation.available:
+        print(f"\nLLM Explanation for {focus_feature}:\n{explanation.content}")
+    else:
+        print(f"\n{UNAVAILABLE_MESSAGE}")
+        if explanation.error:
+            print(f"Details: {explanation.error}")
+
+    reports_dir = Path("reports")
+    reports_dir.mkdir(exist_ok=True)
+    output_path = reports_dir / "drift_report.csv"
+    monitoring_result.drift_df.to_csv(output_path, index=False)
+    print(f"\nDrift report saved to {output_path}")
+
 
 if __name__ == "__main__":
-    df=pd.read_csv("src/data/raw/bank-additional-full.csv",sep=";")
-
-    X=df.drop(columns=["y"])
-    y=df["y"].apply(lambda x: 1 if x=="yes" else 0)
-
-    num_cols=X.select_dtypes(include=["int64","float64"]).columns
-    cat_cols=X.select_dtypes(include=["object"]).columns
-
-    prod_df=df.copy()
-    
-    prod_df=get_incoming_batch(prod_df)
-
-    train_age=df["age"] 
-    prod_age=prod_df["age"] 
-    
-    drift_df=detect_drift(df,prod_df,num_cols)
-    print("Drift Detection Results:",drift_df)
-
-    drifted_features=drift_df[drift_df["drift"]==True]["feature"].tolist()
-    
-    if len(drifted_features)>0:
-        print("\nDrift detected in features:", drifted_features)
-    else:
-        print("\nNo drift detected in numerical features.")
-
-    prompt = f"""
-    You are an ML monitoring expert.
-
-    Drift detected in features: {drifted_features}
-
-    Key stats:
-    - Age mean changed from {train_age.mean():.2f} to {prod_age.mean():.2f}
-
-    CONTEXT:
-    This drift was artificially created by filtering dataset to only include users with age < 35.
-
-    INSTRUCTIONS:
-    - Identify the EXACT cause of drift based on this context
-    - DO NOT give generic reasons like economy, population, etc.
-    - Keep answer short (max 4-5 lines)
-    - Suggest 2 practical ML actions
-
-    Answer:
-    """
-
-    output = generate_explanation(prompt)
-    print("\nLLM Explanation:\n", output)
-    
-    
-    os.makedirs("reports", exist_ok=True)
-    drift_df.to_csv("reports/drift_report.csv", index=False)
-    print("\nDrift report saved to reports/drift_report.csv")
+    main()

@@ -10,10 +10,36 @@ from scipy.stats import chi2_contingency, ks_2samp
 
 
 MISSING_VALUE_LABEL = "__missing__"
+RESULT_COLUMNS = [
+    "feature",
+    "feature_type",
+    "test",
+    "statistic",
+    "drift_score",
+    "ks_stat",
+    "cramer_v",
+    "p_value",
+    "p_threshold",
+    "drift",
+    "reference_count",
+    "incoming_count",
+    "most_shifted_value",
+    "reference_share",
+    "incoming_share",
+    "share_delta",
+]
 
 
 def _as_feature_list(columns: Iterable[str]) -> list[str]:
+    if isinstance(columns, str):
+        return [columns]
+
     return list(columns)
+
+
+def _validate_p_threshold(p_threshold: float) -> None:
+    if not 0 < p_threshold <= 1:
+        raise ValueError("p_threshold must be greater than 0 and at most 1.")
 
 
 def _is_categorical(series: pd.Series) -> bool:
@@ -169,10 +195,12 @@ def detect_drift(
     compatibility with the CLI workflow.
     """
 
+    _validate_p_threshold(p_threshold)
     categorical_set = set(categorical_columns or [])
+    feature_columns = _as_feature_list(columns)
     results = []
 
-    for column in _as_feature_list(columns):
+    for column in feature_columns:
         if column not in train_df.columns:
             raise KeyError(f"Column '{column}' was not found in the reference dataframe.")
         if column not in prod_df.columns:
@@ -185,4 +213,4 @@ def detect_drift(
         else:
             results.append(_numeric_drift_row(column, train_df[column], prod_df[column], p_threshold))
 
-    return pd.DataFrame(results)
+    return pd.DataFrame(results, columns=RESULT_COLUMNS)
