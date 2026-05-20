@@ -4,7 +4,7 @@ Driftium is an end-to-end MLOps project for monitoring data drift in production-
 
 The project is built around the UCI Bank Marketing dataset for tabular drift, plus a lightweight LLM monitoring workflow that calls a local FastAPI/Ollama endpoint, embeds responses, stores vectors in Qdrant, and computes semantic drift.
 
-## Why This Project Is Resume Worthy
+## Add Ons
 
 - Built a reusable drift detection module with statistical tests for both numeric and categorical features.
 - Designed an interactive Streamlit monitoring console with batch controls, feature diagnostics, report export, and RCA generation.
@@ -189,17 +189,6 @@ The pytest suite covers:
 - automatic object-column classification
 - empty incoming numeric batches
 - Qdrant vector storage and retrieval for LLM response embeddings
-
-## Interview Talking Points
-
-- Why KS test is useful for comparing numeric feature distributions.
-- Why categorical drift needs a different statistical test than numeric drift.
-- How effect size helps prioritize alerts beyond p-values.
-- How to ground LLM RCA prompts in observed metrics to reduce hallucinations.
-- How response embeddings and vector stores can turn LLM outputs into monitorable time windows.
-- How this could be extended with scheduled jobs, alerting, MLflow model metadata, and cloud deployment.
-
-See [docs/RESUME_BRIEF.md](docs/RESUME_BRIEF.md) for concise resume bullets and a project explanation script.
 
 ## Author
 
