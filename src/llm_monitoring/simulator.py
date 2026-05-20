@@ -3,6 +3,7 @@ from embedder import embed_texts
 from llm_drift_scorer import compute_drift
 from requests import Response
 from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
+from vector_store import init_collection, store_embeddings, get_embeddings
 
 API_URL = "http://127.0.0.1:8000/generate"
 REQUEST_TIMEOUT_SECONDS = 30
@@ -110,7 +111,7 @@ def generate_drift_prompts():
 # Run simulation
 # -----------------------------
 def run_simulation():
-    print("\n--- Running API-based Drift Simulation ---\n")
+    print("\n--- Running with Qdrant ---\n")
 
     baseline_prompts = generate_baseline_prompts()[:PROMPTS_PER_GROUP]
     drift_prompts = generate_drift_prompts()[:PROMPTS_PER_GROUP]
@@ -118,20 +119,26 @@ def run_simulation():
     baseline_responses = collect_responses(baseline_prompts, "baseline")
     drift_responses = collect_responses(drift_prompts, "drifted")
 
-    # Convert to embeddings
     baseline_embeddings = embed_texts(baseline_responses)
     drift_embeddings = embed_texts(drift_responses)
 
-    # Compute drift
-    result = compute_drift(baseline_embeddings, drift_embeddings)
+    init_collection(vector_size=baseline_embeddings.shape[1])
+
+    # 🔥 STORE in Qdrant
+    store_embeddings(baseline_embeddings, "baseline")
+    store_embeddings(drift_embeddings, "drift")
+
+    # 🔥 RETRIEVE baseline from DB
+    stored_baseline = get_embeddings("baseline")
+
+    # Convert back to numpy
+    import numpy as np
+    stored_baseline = np.array(stored_baseline)
+
+    result = compute_drift(stored_baseline, drift_embeddings)
 
     print("\n--- Drift Result ---")
-    print(f"Centroid Score: {result.centroid_score:.3f}")
-    print(f"MMD Score: {result.mmd_score:.3f}")
-    print(f"Severity: {result.severity}")
-    print(f"Window Size: {result.window_size}")
-
-
+    print(result)
 # -----------------------------
 # Run
 # -----------------------------
