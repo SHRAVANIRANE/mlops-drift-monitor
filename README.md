@@ -1,14 +1,15 @@
 # Driftium - MLOps Drift Monitoring Console
 
-Driftium is an end-to-end MLOps project for monitoring data drift in production-like ML batches. It compares a reference dataset against an incoming batch, detects numeric and categorical feature drift, surfaces feature-level diagnostics in a Streamlit dashboard, and uses a local Ollama LLM to generate a concise root-cause summary.
+Driftium is an end-to-end MLOps project for monitoring data drift in production-like ML batches and LLM response streams. It compares a reference dataset against an incoming batch, detects numeric and categorical feature drift, surfaces feature-level diagnostics in a Streamlit dashboard, and uses a local Ollama LLM to generate a concise root-cause summary.
 
-The project is built around the UCI Bank Marketing dataset and simulates a realistic monitoring incident by creating a shifted incoming batch.
+The project is built around the UCI Bank Marketing dataset for tabular drift, plus a lightweight LLM monitoring workflow that calls a local FastAPI/Ollama endpoint, embeds responses, stores vectors in Qdrant, and computes semantic drift.
 
 ## Why This Project Is Resume Worthy
 
 - Built a reusable drift detection module with statistical tests for both numeric and categorical features.
 - Designed an interactive Streamlit monitoring console with batch controls, feature diagnostics, report export, and RCA generation.
 - Added LLM-assisted root-cause analysis using local Ollama prompts grounded in drift metrics.
+- Added LLM response drift monitoring with FastAPI, Ollama, Sentence Transformers embeddings, Qdrant vector storage, and centroid/MMD drift scoring.
 - Added pytest coverage for core monitoring behavior.
 - Added GitHub Actions CI so tests run automatically on pushes and pull requests.
 - Structured the repo like a practical MLOps project, with room for MLflow, model registry, and deployment extensions.
@@ -22,6 +23,10 @@ The project is built around the UCI Bank Marketing dataset and simulates a reali
 - CSV upload flow for comparing custom incoming batches.
 - Feature analysis views for distribution shifts and category mix changes.
 - Local LLM RCA summaries through Ollama and `phi3:mini`.
+- API-based LLM response simulation through FastAPI and Ollama.
+- Semantic response embeddings with `all-MiniLM-L6-v2`.
+- In-memory Qdrant vector storage for baseline and drifted response windows.
+- LLM response drift scoring with centroid distance and MMD.
 - Downloadable drift reports for audit and handoff.
 
 ## Architecture
@@ -47,6 +52,27 @@ RCA Prompt Builder
 Local Ollama Explanation
 ```
 
+LLM semantic drift flow:
+
+```text
+Baseline Prompts        Drift Prompts
+        |                    |
+        v                    v
+FastAPI /generate endpoint backed by Ollama
+        |
+        v
+LLM Responses
+        |
+        v
+Sentence Transformer Embeddings
+        |
+        v
+Qdrant Vector Store
+        |
+        v
+Centroid + MMD Drift Score
+```
+
 ## Project Structure
 
 ```text
@@ -65,6 +91,12 @@ mlops-drift-monitor/
 |   |-- llm/
 |   |   |-- llm_explainer.py
 |   |   `-- rca_agent.py
+|   |-- llm_monitoring/
+|   |   |-- embedder.py
+|   |   |-- inference_server.py
+|   |   |-- llm_drift_scorer.py
+|   |   |-- simulator.py
+|   |   `-- vector_store.py
 |   |-- monitoring/
 |   |   |-- data_logger.py
 |   |   `-- drift_detection.py
@@ -72,7 +104,11 @@ mlops-drift-monitor/
 |   |-- registry/
 |   `-- utils/
 `-- tests/
-    `-- test_drift_detection.py
+    |-- test_drift_detection.py
+    |-- test_llm_explainer.py
+    |-- test_main_cli.py
+    |-- test_monitoring_service.py
+    `-- test_vector_store.py
 ```
 
 ## Quickstart
@@ -95,6 +131,19 @@ Run the CLI workflow:
 python main.py
 ```
 
+Run the LLM semantic drift simulator:
+
+```powershell
+ollama pull phi3:mini
+python src/llm_monitoring/inference_server.py
+```
+
+In another terminal:
+
+```powershell
+python src/llm_monitoring/simulator.py
+```
+
 Run tests:
 
 ```powershell
@@ -111,6 +160,14 @@ ollama serve
 ```
 
 If Ollama is not running, the app returns a clear LLM connection error while the monitoring reports still work.
+
+The LLM semantic drift simulator also needs the FastAPI inference server:
+
+```powershell
+python src/llm_monitoring/inference_server.py
+```
+
+The simulator stores embeddings in an in-memory Qdrant collection, so no external Qdrant service is required for the local demo. The embedder defaults to cached Hugging Face model files; set `EMBEDDER_LOCAL_FILES_ONLY=0` if you need to allow a first-time model download.
 
 ## Example Monitoring Scenario
 
@@ -131,6 +188,7 @@ The pytest suite covers:
 - categorical mix drift
 - automatic object-column classification
 - empty incoming numeric batches
+- Qdrant vector storage and retrieval for LLM response embeddings
 
 ## Interview Talking Points
 
@@ -138,6 +196,7 @@ The pytest suite covers:
 - Why categorical drift needs a different statistical test than numeric drift.
 - How effect size helps prioritize alerts beyond p-values.
 - How to ground LLM RCA prompts in observed metrics to reduce hallucinations.
+- How response embeddings and vector stores can turn LLM outputs into monitorable time windows.
 - How this could be extended with scheduled jobs, alerting, MLflow model metadata, and cloud deployment.
 
 See [docs/RESUME_BRIEF.md](docs/RESUME_BRIEF.md) for concise resume bullets and a project explanation script.
