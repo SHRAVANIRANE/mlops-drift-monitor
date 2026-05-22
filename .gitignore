@@ -25,5 +25,11 @@ __pycache__/
 # Environment
 venv/
 
+# React frontend
+frontend/node_modules/
+frontend/dist/
+
 # Jupyter
 .ipynb_checkpoints/
+
+Driftium.pdf

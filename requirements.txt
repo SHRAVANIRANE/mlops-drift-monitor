@@ -1,7 +1,6 @@
 numpy>=1.26
 pandas>=2.2
 scipy>=1.12
-streamlit>=1.32
 requests>=2.31
 fastapi>=0.110
 uvicorn>=0.29
