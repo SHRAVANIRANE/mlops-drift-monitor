@@ -4,6 +4,16 @@ Driftium is an end-to-end MLOps project for monitoring data drift in production-
 
 The project is built around the UCI Bank Marketing dataset for tabular drift, plus a lightweight LLM monitoring workflow that calls a local FastAPI/Ollama endpoint, embeds responses, stores vectors in Qdrant, and computes semantic drift.
 
+## Add Ons
+
+- Built a reusable drift detection module with statistical tests for both numeric and categorical features.
+- Designed an interactive Streamlit monitoring console with batch controls, feature diagnostics, report export, and RCA generation.
+- Added LLM-assisted root-cause analysis using local Ollama prompts grounded in drift metrics.
+- Added LLM response drift monitoring with FastAPI, Ollama, Sentence Transformers embeddings, Qdrant vector storage, and centroid/MMD drift scoring.
+- Added pytest coverage for core monitoring behavior.
+- Added GitHub Actions CI so tests run automatically on pushes and pull requests.
+- Structured the repo like a practical MLOps project, with room for MLflow, model registry, and deployment extensions.
+
 ## Core Capabilities
 
 - React monitoring console with batch controls, feature diagnostics, RCA, and report export.
@@ -156,12 +166,16 @@ incoming_batch = reference_dataset[reference_dataset["age"] < 35]
 
 This creates a controlled population shift. The system detects direct drift in `age` and secondary drift in correlated economic, demographic, and categorical features.
 
-## API Endpoints
+## Testing
 
-- `GET /api/health`
-- `GET /api/monitoring/simulated?age_threshold=35&p_threshold=0.05`
-- `POST /api/monitoring/upload?p_threshold=0.05`
-- `POST /api/rca`
+The pytest suite covers:
+
+- numeric drift detection
+- stable numeric distributions
+- categorical mix drift
+- automatic object-column classification
+- empty incoming numeric batches
+- Qdrant vector storage and retrieval for LLM response embeddings
 
 ## Author
 
