@@ -1,18 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List
 import uuid
+import logging
+import ollama
 
 # your modules
 from src.llm_monitoring.embedder import embed_texts
 from src.llm_monitoring.llm_drift_scorer import compute_drift
 
+logger = logging.getLogger("llm_monitoring")
+
 app = FastAPI(title="LLM Drift Monitoring API")
 
 # -------------------------------
 # 🔹 In-memory storage (for now)
-# later replace with Postgres
 # -------------------------------
 baseline_responses = []
 current_responses = []
@@ -27,18 +30,25 @@ class PromptRequest(BaseModel):
 
 
 # -------------------------------
-# 🔹 Mock LLM (replace later)
+# 🔹 Ollama LLM Response Generator
 # -------------------------------
 def generate_response(prompt: str) -> str:
-    """
-    Replace this with Ollama / OpenAI later
-    """
-    if "cook" in prompt.lower():
-        return "Boil water, add pasta, cook for 10 minutes."
-    elif "finance" in prompt.lower():
-        return "Investing requires risk management and diversification."
-    else:
-        return "This is a generic response."
+    try:
+        response = ollama.chat(
+            model="phi3:mini",
+            messages=[{"role": "user", "content": prompt}],
+            options={"num_predict": 128},
+        )
+        content = response.get("message", {}).get("content", "").strip()
+        if not content:
+            raise ValueError("Empty response received from Ollama.")
+        return content
+    except Exception as e:
+        logger.error(f"Ollama generation failed for prompt '{prompt}': {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Ollama service is unavailable. Make sure 'ollama serve' is running and phi3:mini is installed."
+        )
 
 
 # -------------------------------
