@@ -22,17 +22,29 @@ import {
   Zap,
 } from "lucide-react";
 
-import { fetchSimulatedMonitoring, generateRca, uploadMonitoringBatch } from "./api.js";
+import {
+  fetchSimulatedMonitoring,
+  generateRca,
+  uploadMonitoringBatch,
+  generateLlmResponse,
+  setLlmBaseline,
+  fetchLlmDrift,
+  fetchLlmDriftHistory,
+  fetchLlmSamples,
+} from "./api.js";
 
 const TOP_NAV = ["Models", "Integrations", "Alerts", "Docs"];
 
 const DASHBOARD_SECTIONS = [
+  { id: "llm_drift", label: "LLM Drift", icon: Activity },
+  { id: "llm_playground", label: "Prompt Playground", icon: SlidersHorizontal },
   { id: "overview", label: "Overview", icon: Blocks },
   { id: "drift", label: "Drift Analysis", icon: BarChart3 },
   { id: "prompts", label: "RCA", icon: Brain },
   { id: "tokens", label: "Feature Mix", icon: Radio },
   { id: "settings", label: "Settings", icon: Settings },
 ];
+
 
 const TREND_VALUES = [46, 43, 52, 38, 58, 60, 49, 72, 78, 68, 86, 89, 75, 72, 66, 69, 84];
 const TOKEN_BARS = [34, 50, 45, 66, 38, 78];
@@ -354,6 +366,314 @@ function TokenBars({ compact = false }) {
   );
 }
 
+function LlmDriftPanel() {
+  const [drift, setDrift] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [samples, setSamples] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError("");
+        const [driftRes, historyRes, samplesRes] = await Promise.all([
+          fetchLlmDrift(),
+          fetchLlmDriftHistory(),
+          fetchLlmSamples()
+        ]);
+        setDrift(driftRes);
+        setHistory(historyRes);
+        setSamples(samplesRes);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="apiNotice live">
+        <Loader2 size={18} />
+        Loading LLM observability data...
+      </div>
+    );
+  }
+
+  if (error || drift?.error) {
+    const errorMsg = error || drift?.error;
+    return (
+      <div className="dashboardStack">
+        <div className="apiNotice">
+          <AlertTriangle size={18} />
+          {errorMsg.includes("Need both baseline") ? (
+            <span>
+              <strong>No baseline set.</strong> Please run the simulator or establish a baseline via CLI/API first.
+            </span>
+          ) : (
+            `Failed to load LLM monitoring data: ${errorMsg}`
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const centroidVal = drift?.centroid_score ?? 0;
+  const healthScore = Math.max(0, Math.min(100, Math.round((1 - centroidVal) * 100)));
+  const tone = drift?.severity === "CRITICAL" || drift?.severity === "HIGH" ? "critical" : drift?.severity === "MEDIUM" ? "warning" : "stable";
+
+  const trendValues = history.map(item => Math.max(0, Math.min(100, Math.round((1 - item.centroid_score) * 100))));
+  const displayTrendValues = trendValues.length > 1 ? trendValues : Array(10).fill(healthScore);
+
+  return (
+    <div className="dashboardStack">
+      <section className="dashboardGrid topMetrics">
+        <article className="dashboardPanel driftScorePanel">
+          <div className="panelHeader">
+            <span>LLM Semantic Health</span>
+            <strong className={`statusLabel ${tone}`}>
+              {drift?.severity || "LOW"}
+            </strong>
+          </div>
+          <div className="scoreValue">
+            <strong>{healthScore}</strong>
+            <span>/100</span>
+          </div>
+          <div className="scoreTrack">
+            <span style={{ width: `${healthScore}%` }} />
+          </div>
+          <p>
+            Centroid cosine distance: {formatDecimal(drift?.centroid_score, 4)}. MMD Score: {formatDecimal(drift?.mmd_score, 4)}.
+          </p>
+        </article>
+
+        <article className="dashboardPanel trendPanel">
+          <div className="panelHeader">
+            <span>Semantic Stability Trend</span>
+            <div className="legendDots">
+              <span className="driftDot">Health %</span>
+              <span className="thresholdDot">Critical Limit</span>
+            </div>
+          </div>
+          <LineTrend values={displayTrendValues} />
+        </article>
+      </section>
+
+      <section className="miniMetricGrid">
+        <MetricTile icon={Activity} label="Centroid Distance" value={formatDecimal(drift?.centroid_score, 4)} />
+        <MetricTile icon={SlidersHorizontal} label="MMD Score" value={formatDecimal(drift?.mmd_score, 4)} />
+        <MetricTile icon={Database} label="Baseline Size" value={samples?.baseline?.length ?? 0} />
+        <MetricTile icon={Zap} label="Telemetry Size" value={samples?.current?.length ?? 0} />
+      </section>
+
+      <section className="dashboardPanel comparisonPanel">
+        <div className="comparisonTitle">
+          <div>
+            <Table2 size={28} />
+            <h2>Active LLM Samples</h2>
+          </div>
+          <span>Side-by-Side</span>
+        </div>
+        <div className="comparisonGrid">
+          <CodePane
+            title="Baseline Response Samples"
+            muted
+            code={JSON.stringify(samples?.baseline || [], null, 2)}
+          />
+          <CodePane
+            title="Current Response Samples"
+            code={JSON.stringify(samples?.current || [], null, 2)}
+          />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LlmPlaygroundPanel() {
+  const [prompt, setPrompt] = useState("");
+  const [lastResponse, setLastResponse] = useState(null);
+  const [samples, setSamples] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [baselineSetting, setBaselineSetting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function loadSamples() {
+    try {
+      const res = await fetchLlmSamples();
+      setSamples(res);
+    } catch (err) {
+      console.error("Failed to load samples", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadSamples();
+  }, []);
+
+  async function handleGenerate(e) {
+    e.preventDefault();
+    if (!prompt.trim()) return;
+
+    setGenerating(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await generateLlmResponse(prompt);
+      setLastResponse(res);
+      setPrompt("");
+      setSuccess("Response generated and stored successfully.");
+      await loadSamples();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleSetBaseline() {
+    setBaselineSetting(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await setLlmBaseline();
+      setSuccess(`${res.message} (Baseline size: ${res.baseline_size})`);
+      setLastResponse(null);
+      await loadSamples();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBaselineSetting(false);
+    }
+  }
+
+  return (
+    <div className="dashboardStack">
+      <section className="dashboardPanel settingsPanel">
+        <div className="comparisonTitle">
+          <div>
+            <SlidersHorizontal size={28} />
+            <h2>Interactive LLM Playground</h2>
+          </div>
+        </div>
+
+        <div className="playgroundGrid" style={{ padding: "30px" }}>
+          <form onSubmit={handleGenerate}>
+            <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
+              Test Prompt
+            </label>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <input
+                type="text"
+                className="promptInput"
+                placeholder="Enter a prompt (e.g., 'How to cook pasta?')"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={generating}
+              />
+              <button className="cyanButton compact" type="submit" disabled={generating || !prompt.trim()}>
+                {generating ? (
+                  <span className="spinnerLabel">
+                    <Loader2 size={16} />
+                  </span>
+                ) : (
+                  <Zap size={16} />
+                )}
+                Generate
+              </button>
+            </div>
+          </form>
+
+          {error && (
+            <div className="apiNotice" style={{ marginTop: "15px" }}>
+              <AlertTriangle size={18} />
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="apiNotice live" style={{ marginTop: "15px" }}>
+              <Zap size={18} />
+              {success}
+            </div>
+          )}
+
+          {lastResponse && (
+            <div style={{ marginTop: "20px" }}>
+              <h3 style={{ marginBottom: "8px" }}>Last Response</h3>
+              <CodePane
+                title={`Prompt: "${lastResponse.prompt}"`}
+                code={lastResponse.response}
+              />
+            </div>
+          )}
+
+          <div className="playgroundActionRow" style={{ marginTop: "30px", borderTop: "1px solid var(--line)", paddingTop: "20px" }}>
+            <div>
+              <h3>Establish Baseline</h3>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginTop: "4px" }}>
+                Prompts generated during this session will be captured as the current distribution. Click below to promote them as the new drift baseline.
+              </p>
+            </div>
+            <button
+              className="outlineButton"
+              type="button"
+              onClick={handleSetBaseline}
+              disabled={baselineSetting || !samples?.current?.length}
+              style={{ marginLeft: "auto" }}
+            >
+              {baselineSetting ? (
+                <span className="spinnerLabel">
+                  <Loader2 size={16} />
+                </span>
+              ) : (
+                <Database size={16} />
+              )}
+              Set Baseline
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboardPanel comparisonPanel">
+        <div className="comparisonTitle">
+          <div>
+            <Table2 size={28} />
+            <h2>Drift Samples Status</h2>
+          </div>
+          <span>Active Pools</span>
+        </div>
+        {loading ? (
+          <div className="apiNotice live" style={{ margin: "20px" }}>
+            <Loader2 size={18} />
+            Loading active pools...
+          </div>
+        ) : (
+          <div className="comparisonGrid">
+            <CodePane
+              title={`Baseline Responses (${samples?.baseline?.length || 0})`}
+              muted
+              code={JSON.stringify(samples?.baseline || [], null, 2)}
+            />
+            <CodePane
+              title={`Current Session Responses (${samples?.current?.length || 0})`}
+              code={JSON.stringify(samples?.current || [], null, 2)}
+            />
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 function DashboardPage({
   activeSection,
   setActiveSection,
@@ -409,7 +729,40 @@ function DashboardPage({
           </div>
 
           <nav className="sideNav" aria-label="Dashboard navigation">
-            {DASHBOARD_SECTIONS.map((item) => {
+            <div className="sidebarGroupLabel">LLM Monitoring</div>
+            {DASHBOARD_SECTIONS.filter((s) => s.id.startsWith("llm_")).map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  className={activeSection === item.id ? "active" : ""}
+                  type="button"
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  <Icon size={24} />
+                  {item.label}
+                </button>
+              );
+            })}
+
+            <div className="sidebarGroupLabel">Dataset Monitoring</div>
+            {DASHBOARD_SECTIONS.filter((s) => !s.id.startsWith("llm_") && s.id !== "settings").map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  className={activeSection === item.id ? "active" : ""}
+                  type="button"
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  <Icon size={24} />
+                  {item.label}
+                </button>
+              );
+            })}
+
+            <div className="sidebarGroupLabel">Configuration</div>
+            {DASHBOARD_SECTIONS.filter((s) => s.id === "settings").map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -444,14 +797,21 @@ function DashboardPage({
         <main className="dashboardMain">
           <header className="dashboardTitleRow">
             <div>
-              <h1>Driftium Monitoring Dashboard</h1>
-              <p>{sourceLabel}</p>
+              <h1>
+                {activeSection === "llm_drift" ? "LLM Drift Monitoring" : "Driftium Monitoring Dashboard"}
+              </h1>
+              <p>
+                {activeSection === "llm_drift"
+                  ? "Monitor semantic drift in LLM responses using embeddings, centroid distance, and MMD scoring."
+                  : sourceLabel}
+              </p>
             </div>
             <div className="lastUpdate">
               <span>Last Update</span>
               <strong>{lastUpdate}</strong>
             </div>
           </header>
+
 
           {error && (
             <div className="apiNotice">
@@ -467,8 +827,16 @@ function DashboardPage({
             </div>
           )}
 
-          {!hasData && !loading && !error && activeSection !== "settings" && (
+          {!hasData && !loading && !error && !activeSection.startsWith("llm_") && activeSection !== "settings" && (
             <EmptyMonitoringPanel mode={mode} />
+          )}
+
+          {activeSection === "llm_drift" && (
+            <LlmDriftPanel />
+          )}
+
+          {activeSection === "llm_playground" && (
+            <LlmPlaygroundPanel />
           )}
 
           {activeSection === "overview" && (
@@ -1125,7 +1493,7 @@ function SettingsPanel({
 
 export default function App() {
   const [screen, setScreen] = useState("landing");
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState("llm_drift");
   const [mode, setMode] = useState("simulated");
   const [ageThreshold, setAgeThreshold] = useState(35);
   const [pThreshold, setPThreshold] = useState(0.05);
@@ -1187,7 +1555,7 @@ export default function App() {
 
   function enterDashboard() {
     setScreen("dashboard");
-    setActiveSection("overview");
+    setActiveSection("llm_drift");
   }
 
   if (screen === "landing") {

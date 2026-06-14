@@ -289,3 +289,9 @@ def generate_rca(request: RCARequest) -> dict[str, Any]:
         "model": result.model,
         "message": None if result.available else UNAVAILABLE_MESSAGE,
     }
+
+
+from src.llm_monitoring.api import app as llm_monitoring_app
+
+app.mount("/", llm_monitoring_app)
+

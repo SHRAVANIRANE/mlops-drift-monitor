@@ -66,3 +66,52 @@ export async function generateRca({ data, feature }) {
 
   return response.json();
 }
+
+export async function generateLlmResponse(prompt) {
+  const response = await fetch(`${API_BASE_URL}/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+export async function setLlmBaseline() {
+  const response = await fetch(`${API_BASE_URL}/baseline`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+export async function fetchLlmDrift() {
+  const response = await fetch(`${API_BASE_URL}/drift`);
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+export async function fetchLlmDriftHistory() {
+  const response = await fetch(`${API_BASE_URL}/drift/history`);
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+export async function fetchLlmSamples() {
+  const response = await fetch(`${API_BASE_URL}/samples`);
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+

@@ -91,12 +91,16 @@ def get_drift():
     result = compute_drift(base_emb, curr_emb)
 
     # store history
-    return {
-    "timestamp": datetime.utcnow(),
-    "centroid_score": float(result.centroid_score),
-    "mmd_score": float(result.mmd_score),
-    "severity": str(result.severity)
+    drift_res = {
+        "timestamp": datetime.utcnow(),
+        "centroid_score": float(result.centroid_score),
+        "mmd_score": float(result.mmd_score),
+        "severity": str(result.severity)
     }
+    drift_history.append(drift_res)
+
+    return drift_res
+
 
 
 # -------------------------------
