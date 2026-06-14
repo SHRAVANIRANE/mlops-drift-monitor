@@ -1,32 +1,38 @@
 # Driftium - MLOps Drift Monitoring Console
 
-Driftium is an end-to-end MLOps project for monitoring data drift in production-like ML batches and LLM response streams. The tabular monitoring experience now runs as a React frontend backed by FastAPI, while the statistical drift logic stays in reusable Python service modules.
+Driftium is an end-to-end MLOps monitoring project for tabular feature drift and experimental LLM response drift. The current version pairs a FastAPI monitoring backend with a React/Vite frontend, using the UCI Bank Marketing dataset as the reference population for production-like batch monitoring.
 
-The project is built around the UCI Bank Marketing dataset for tabular drift, plus a lightweight LLM monitoring workflow that calls a local FastAPI/Ollama endpoint, embeds responses, stores vectors in Qdrant, and computes semantic drift.
+The project also includes a CLI workflow that exports drift reports and can request local LLM-assisted root-cause analysis through Ollama when it is available.
 
-## Add Ons
+## Latest Update
 
-- Built a reusable drift detection module with statistical tests for both numeric and categorical features.
-- Designed an interactive Streamlit monitoring console with batch controls, feature diagnostics, report export, and RCA generation.
-- Added LLM-assisted root-cause analysis using local Ollama prompts grounded in drift metrics.
-- Added LLM response drift monitoring with FastAPI, Ollama, Sentence Transformers embeddings, Qdrant vector storage, and centroid/MMD drift scoring.
-- Added pytest coverage for core monitoring behavior.
-- Added GitHub Actions CI so tests run automatically on pushes and pull requests.
-- Structured the repo like a practical MLOps project, with room for MLflow, model registry, and deployment extensions.
+- Rebuilt the user experience as a React/Vite app with a product landing page and a multi-section monitoring dashboard.
+- Added dashboard sections for overview metrics, drift analysis, prompt performance, token usage, and monitoring settings.
+- Connected the frontend to FastAPI endpoints for simulated monitoring batches and CSV batch uploads.
+- Added adjustable monitoring controls for incoming source, age cutoff, and p-value threshold.
+- Kept a styled local snapshot in the frontend so the UI remains usable when the API is offline.
+- Expanded the backend monitoring payload with summary metrics, sorted drift rows, top signal metadata, missing columns, and feature-level chart data.
+- Kept CLI report export to `reports/drift_report.csv`.
+- Added graceful Ollama fallback behavior for RCA, so tests and core monitoring do not require a running local model.
 
 ## Core Capabilities
 
-- React monitoring console with batch controls, feature diagnostics, RCA, and report export.
-- FastAPI monitoring API for simulated batches, uploaded CSV batches, and RCA generation.
+- React dashboard for viewing monitoring health, drift severity, top signals, and monitoring tables.
+- FastAPI monitoring API for health checks, simulated drift batches, uploaded CSV batches, and RCA generation.
 - Numeric drift detection with the two-sample Kolmogorov-Smirnov test.
 - Categorical drift detection with chi-square contingency tests and Cramer's V effect size.
 - Configurable drift p-value threshold.
 - Simulated production batch generation through an age-based population shift.
-- Local LLM RCA summaries through Ollama and `phi3:mini`.
-- Semantic LLM response drift scoring with embeddings, Qdrant, centroid distance, and MMD.
-- Pytest coverage for core monitoring behavior.
+- CSV upload support for compatible incoming batches.
+- Missing-column reporting for partial incoming batches.
+- CLI workflow for drift detection, RCA prompt generation, and CSV report export.
+- Optional local LLM RCA summaries through Ollama and `phi3:mini`.
+- Experimental LLM response drift workflow with FastAPI, Ollama, Sentence Transformers, in-memory Qdrant, centroid distance, and MMD scoring.
+- Pytest coverage for drift detection, monitoring service behavior, CLI smoke path, Ollama fallback behavior, and vector storage.
 
 ## Architecture
+
+Tabular monitoring flow:
 
 ```text
 Reference Dataset
@@ -38,13 +44,28 @@ Incoming Batch
 FastAPI Monitoring API
         |
         v
-React Monitoring Console
+React Monitoring Dashboard
         |
         v
-Feature Diagnostics / RCA / Report CSV
+Drift Summary / Top Signal / Monitoring Table
 ```
 
-LLM semantic drift flow:
+CLI reporting flow:
+
+```text
+Reference Dataset + Simulated Batch
+        |
+        v
+Monitoring Service
+        |
+        v
+Console Output + reports/drift_report.csv
+        |
+        v
+Optional Ollama RCA
+```
+
+Experimental LLM semantic drift flow:
 
 ```text
 Baseline Prompts        Drift Prompts
@@ -59,7 +80,7 @@ LLM Responses
 Sentence Transformer Embeddings
         |
         v
-Qdrant Vector Store
+In-memory Qdrant Vector Store
         |
         v
 Centroid + MMD Drift Score
@@ -69,21 +90,26 @@ Centroid + MMD Drift Score
 
 ```text
 mlops-drift-monitor/
-|-- frontend/                     # React/Vite monitoring console
+|-- frontend/                     # React/Vite frontend
 |   |-- src/
-|   |   |-- App.jsx
-|   |   |-- api.js
+|   |   |-- App.jsx               # Landing page and dashboard UI
+|   |   |-- api.js                # FastAPI client helpers
 |   |   `-- styles.css
 |   |-- index.html
 |   `-- package.json
-|-- main.py                       # CLI demo workflow
+|-- main.py                       # CLI demo workflow and report export
 |-- requirements.txt
 |-- docs/
+|-- monitoring/                   # Legacy/import-compatible monitoring modules
+|-- reports/
+|   `-- drift_report.csv
 |-- src/
 |   |-- data/raw/
 |   |   `-- bank-additional-full.csv
 |   |-- llm/
-|   |-- llm_monitoring/
+|   |   |-- llm_explainer.py      # Ollama RCA wrapper
+|   |   `-- rca_agent.py
+|   |-- llm_monitoring/           # Experimental semantic drift prototype
 |   |-- monitoring/
 |   |   |-- api.py                # FastAPI tabular monitoring API
 |   |   |-- data_logger.py
@@ -97,6 +123,8 @@ mlops-drift-monitor/
 
 ## Quickstart
 
+Create and activate a Python environment:
+
 ```powershell
 python -m venv venv
 venv\Scripts\activate
@@ -109,7 +137,7 @@ Run the FastAPI monitoring backend:
 uvicorn src.monitoring.api:app --reload --port 8000
 ```
 
-Run the React frontend:
+In another terminal, run the React frontend:
 
 ```powershell
 cd frontend
@@ -117,32 +145,44 @@ npm install
 npm run dev
 ```
 
-Open the frontend at `http://127.0.0.1:5173`. If the API runs on another host, set `VITE_API_BASE_URL` before starting Vite.
+Open the frontend at `http://127.0.0.1:5173`.
 
-Run the CLI workflow:
+If the API runs somewhere else, set `VITE_API_BASE_URL` before starting Vite:
+
+```powershell
+$env:VITE_API_BASE_URL="http://127.0.0.1:8000"
+npm run dev
+```
+
+## API Endpoints
+
+- `GET /api/health` - API health check.
+- `GET /api/monitoring/simulated?age_threshold=35&p_threshold=0.05` - Build a monitoring payload from an age-filtered simulated batch.
+- `POST /api/monitoring/upload?p_threshold=0.05` - Build a monitoring payload from an uploaded CSV batch.
+- `POST /api/rca` - Generate a concise RCA response for a selected feature using local Ollama when available.
+
+## CLI Workflow
+
+Run the local CLI demo:
 
 ```powershell
 python main.py
 ```
 
-Run tests:
-
-```powershell
-pytest
-```
+The CLI loads the Bank Marketing reference dataset, creates a simulated incoming batch where `age < 35`, prints drift results, optionally requests an RCA explanation from Ollama, and writes `reports/drift_report.csv`.
 
 ## LLM Setup
 
-The drift detection API and React console work without Ollama. The RCA view needs a local Ollama server.
+The FastAPI monitoring API and React dashboard work without Ollama. RCA and the experimental semantic drift simulator need a local Ollama server.
 
 ```powershell
 ollama pull phi3:mini
 ollama serve
 ```
 
-If Ollama is not running, the RCA endpoint returns a clear unavailable response while the monitoring report remains usable.
+If Ollama is not running, RCA returns a clear unavailable response while the monitoring report remains usable.
 
-The LLM semantic drift simulator also needs the FastAPI inference server:
+To run the experimental LLM response drift simulator, start the inference server:
 
 ```powershell
 python src/llm_monitoring/inference_server.py
@@ -158,23 +198,33 @@ The simulator stores embeddings in an in-memory Qdrant collection, so no externa
 
 ## Example Monitoring Scenario
 
-The default dashboard compares the full reference dataset against a simulated incoming batch filtered by age:
+The default simulated dashboard compares the full reference dataset against an incoming batch filtered by age:
 
 ```text
 incoming_batch = reference_dataset[reference_dataset["age"] < 35]
 ```
 
-This creates a controlled population shift. The system detects direct drift in `age` and secondary drift in correlated economic, demographic, and categorical features.
+This creates a controlled population shift. The system detects direct drift in `age` and can surface secondary movement in correlated economic, demographic, and categorical features.
 
 ## Testing
 
-The pytest suite covers:
+Run the full test suite:
+
+```powershell
+pytest
+```
+
+The suite covers:
 
 - numeric drift detection
 - stable numeric distributions
 - categorical mix drift
 - automatic object-column classification
-- empty incoming numeric batches
+- missing-column handling for partial incoming batches
+- empty incoming batch validation
+- mixed-type numeric incoming values
+- Ollama success and unavailable paths
+- CLI smoke path and report export
 - Qdrant vector storage and retrieval for LLM response embeddings
 
 ## Author

@@ -1153,6 +1153,16 @@ p {
   grid-template-columns: minmax(120px, 0.8fr) minmax(140px, 1fr) 54px;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+button.signalRow:hover > span,
+button.signalRow:focus-visible > span {
+  color: var(--text);
 }
 
 .signalRow > span {
@@ -1214,6 +1224,14 @@ th {
 
 td {
   color: var(--muted-strong);
+}
+
+.tablePanel tbody tr {
+  cursor: pointer;
+}
+
+.tablePanel tbody tr.selectedRow {
+  background: rgba(17, 216, 232, 0.08);
 }
 
 .statePill,

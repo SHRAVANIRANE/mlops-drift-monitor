@@ -10,9 +10,7 @@ import {
   Database,
   Gauge,
   HelpCircle,
-  History,
   Loader2,
-  Play,
   Plus,
   Radio,
   RefreshCw,
@@ -24,94 +22,31 @@ import {
   Zap,
 } from "lucide-react";
 
-import { fetchSimulatedMonitoring, uploadMonitoringBatch } from "./api.js";
+import { fetchSimulatedMonitoring, generateRca, uploadMonitoringBatch } from "./api.js";
 
 const TOP_NAV = ["Models", "Integrations", "Alerts", "Docs"];
 
 const DASHBOARD_SECTIONS = [
   { id: "overview", label: "Overview", icon: Blocks },
   { id: "drift", label: "Drift Analysis", icon: BarChart3 },
-  { id: "prompts", label: "Prompt Performance", icon: Gauge },
-  { id: "tokens", label: "Token Usage", icon: Radio },
+  { id: "prompts", label: "RCA", icon: Brain },
+  { id: "tokens", label: "Feature Mix", icon: Radio },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-const FALLBACK_ROWS = [
-  {
-    feature: "semantic_distance",
-    type: "numeric",
-    status: "alert",
-    severity: "Critical",
-    drift_score: 0.84,
-    p_value: 0.0019,
-    shift: "+18.7%",
-  },
-  {
-    feature: "response_toxicity",
-    type: "numeric",
-    status: "alert",
-    severity: "High",
-    drift_score: 0.66,
-    p_value: 0.0081,
-    shift: "+9.4%",
-  },
-  {
-    feature: "latency_ms",
-    type: "numeric",
-    status: "alert",
-    severity: "Medium",
-    drift_score: 0.42,
-    p_value: 0.032,
-    shift: "+6.1%",
-  },
-  {
-    feature: "refusal_rate",
-    type: "numeric",
-    status: "stable",
-    severity: "Low",
-    drift_score: 0.18,
-    p_value: 0.21,
-    shift: "-1.5%",
-  },
-  {
-    feature: "output_schema",
-    type: "categorical",
-    status: "stable",
-    severity: "Low",
-    drift_score: 0.12,
-    p_value: 0.33,
-    shift: "+0.9%",
-  },
-];
-
-const FALLBACK_MONITORING = {
-  generated_at: new Date().toISOString(),
-  threshold: 0.05,
-  source: {
-    label: "Production Snapshot",
-    description: "Demo monitoring envelope",
-  },
-  summary: {
-    reference_rows: 2400,
-    incoming_rows: 2186,
-    monitored_feature_count: 15,
-    numeric_feature_count: 10,
-    categorical_feature_count: 5,
-    drifted_feature_count: 3,
-    drift_rate: 0.16,
-  },
-  top_signal: {
-    feature: "semantic_distance",
-    test: "embedding delta",
-    drift_score: 0.84,
-    p_value: 0.0019,
-  },
-  display_rows: FALLBACK_ROWS,
-  drift_rows: FALLBACK_ROWS,
-};
-
 const TREND_VALUES = [46, 43, 52, 38, 58, 60, 49, 72, 78, 68, 86, 89, 75, 72, 66, 69, 84];
 const TOKEN_BARS = [34, 50, 45, 66, 38, 78];
+
+const EMPTY_SUMMARY = {
+  reference_rows: 0,
+  incoming_rows: 0,
+  monitored_feature_count: 0,
+  numeric_feature_count: 0,
+  categorical_feature_count: 0,
+  drifted_feature_count: 0,
+  drift_rate: 0,
+};
+
 
 function formatInteger(value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
@@ -159,12 +94,12 @@ function statusClass(status) {
 
 function formatLastUpdate(value) {
   if (!value) {
-    return "2 mins ago";
+    return "waiting for data";
   }
 
   const stamp = new Date(value);
   if (Number.isNaN(stamp.getTime())) {
-    return "2 mins ago";
+    return "waiting for data";
   }
 
   const minutes = Math.max(0, Math.round((Date.now() - stamp.getTime()) / 60000));
@@ -180,33 +115,67 @@ function formatLastUpdate(value) {
   return `${hours} hr${hours === 1 ? "" : "s"} ago`;
 }
 
-function getEffectiveData(data) {
-  return data ?? FALLBACK_MONITORING;
-}
-
 function getRows(data) {
-  const rows = data?.display_rows?.length ? data.display_rows : FALLBACK_ROWS;
+  const rows = data?.display_rows ?? [];
   return rows.map((row) => ({
     ...row,
+    status: row.status ?? "Stable",
+    severity: row.severity ?? "Low",
     drift_score: Number(row.drift_score) || 0,
   }));
 }
 
 function getDriftScore(summary) {
-  const rate = clamp(Number(summary?.drift_rate ?? 0.16), 0, 1);
+  const rate = clamp(Number(summary?.drift_rate ?? 0), 0, 1);
   return clamp(Math.round(100 - rate * 100), 1, 99);
 }
 
-function getTopSignal(data) {
-  const rows = getRows(data);
-  return (
-    data?.top_signal ?? {
-      feature: rows[0]?.feature ?? FALLBACK_MONITORING.top_signal.feature,
-      test: rows[0]?.type ?? FALLBACK_MONITORING.top_signal.test,
-      drift_score: rows[0]?.drift_score ?? FALLBACK_MONITORING.top_signal.drift_score,
-      p_value: rows[0]?.p_value ?? FALLBACK_MONITORING.top_signal.p_value,
+function getTopSignal(data, rows = []) {
+  if (data?.top_signal) {
+    return data.top_signal;
+  }
+
+  if (rows.length > 0) {
+    return {
+      feature: rows[0].feature,
+      test: rows[0].test ?? rows[0].type,
+      drift_score: rows[0].drift_score,
+      p_value: rows[0].p_value,
+      status: rows[0].status,
+      severity: rows[0].severity,
+    };
+  }
+
+  return {
+    feature: "No signal selected",
+    test: "n/a",
+    drift_score: 0,
+    p_value: null,
+    status: "Stable",
+    severity: "Low",
+  };
+}
+
+function formatMetricLabel(value) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatMetricValue(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "n/a";
+  }
+
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      return "n/a";
     }
-  );
+
+    return Math.abs(value) < 1 ? value.toFixed(3) : value.toFixed(2);
+  }
+
+  return String(value);
 }
 
 function TopNav({ onDashboard, onLanding, activeItem = "Models" }) {
@@ -351,7 +320,7 @@ function LandingPage({ onEnterDashboard }) {
       <footer className="siteFooter">
         <div>
           <strong>Driftium</strong>
-          <span>© 2024 Driftium AI. Precision drift monitoring for LLMs.</span>
+          <span>Copyright 2024 Driftium AI. Precision drift monitoring for ML systems.</span>
         </div>
         <nav aria-label="Footer navigation">
           <a href="#privacy">Privacy Policy</a>
@@ -403,12 +372,30 @@ function DashboardPage({
   onLanding,
   onDashboard,
 }) {
-  const effectiveData = getEffectiveData(data);
   const rows = getRows(data);
-  const summary = effectiveData.summary;
+  const summary = data?.summary ?? EMPTY_SUMMARY;
   const driftScore = getDriftScore(summary);
-  const topSignal = getTopSignal(data);
-  const lastUpdate = formatLastUpdate(effectiveData.generated_at);
+  const topSignal = getTopSignal(data, rows);
+  const lastUpdate = formatLastUpdate(data?.generated_at);
+  const hasData = Boolean(data);
+  const defaultFeature = data?.top_signal?.feature ?? rows[0]?.feature ?? null;
+  const [selectedFeature, setSelectedFeature] = useState(defaultFeature);
+  const activeFeature = selectedFeature ?? defaultFeature;
+  const featureDetails = activeFeature ? data?.feature_details?.[activeFeature] : null;
+  const sourceLabel =
+    data?.source?.label ??
+    (mode === "upload" ? "Uploaded batch" : `Simulated batch: age < ${ageThreshold}`);
+
+  useEffect(() => {
+    if (!defaultFeature) {
+      setSelectedFeature(null);
+      return;
+    }
+
+    setSelectedFeature((current) =>
+      current && data?.feature_details?.[current] ? current : defaultFeature,
+    );
+  }, [data, defaultFeature]);
 
   return (
     <div className="dashboardPage">
@@ -457,8 +444,8 @@ function DashboardPage({
         <main className="dashboardMain">
           <header className="dashboardTitleRow">
             <div>
-              <h1>GPT-4o Production Dashboard</h1>
-              <p>Monitoring real-time performance and semantic drift</p>
+              <h1>Driftium Monitoring Dashboard</h1>
+              <p>{sourceLabel}</p>
             </div>
             <div className="lastUpdate">
               <span>Last Update</span>
@@ -469,7 +456,7 @@ function DashboardPage({
           {error && (
             <div className="apiNotice">
               <AlertTriangle size={18} />
-              Showing a styled local snapshot while the monitoring API is unavailable: {error}
+              Could not load monitoring data: {error}
             </div>
           )}
 
@@ -480,23 +467,50 @@ function DashboardPage({
             </div>
           )}
 
+          {!hasData && !loading && !error && activeSection !== "settings" && (
+            <EmptyMonitoringPanel mode={mode} />
+          )}
+
           {activeSection === "overview" && (
-            <OverviewPanel
-              driftScore={driftScore}
-              summary={summary}
-              topSignal={topSignal}
-              rows={rows}
-              live={Boolean(data && !error)}
-            />
+            hasData && (
+              <OverviewPanel
+                data={data}
+                driftScore={driftScore}
+                summary={summary}
+                topSignal={topSignal}
+                rows={rows}
+                live={Boolean(data && !error)}
+                onSelectFeature={setSelectedFeature}
+              />
+            )
           )}
 
           {activeSection === "drift" && (
-            <DriftAnalysisPanel rows={rows} topSignal={topSignal} summary={summary} />
+            hasData && (
+              <DriftAnalysisPanel
+                data={data}
+                rows={rows}
+                topSignal={topSignal}
+                summary={summary}
+                activeFeature={activeFeature}
+                featureDetails={featureDetails}
+                onSelectFeature={setSelectedFeature}
+              />
+            )
           )}
 
-          {activeSection === "prompts" && <PromptPerformancePanel topSignal={topSignal} />}
+          {activeSection === "prompts" && (
+            hasData && (
+              <PromptPerformancePanel
+                data={data}
+                topSignal={topSignal}
+                activeFeature={activeFeature}
+                featureDetails={featureDetails}
+              />
+            )
+          )}
 
-          {activeSection === "tokens" && <TokenUsagePanel summary={summary} />}
+          {activeSection === "tokens" && hasData && <TokenUsagePanel summary={summary} />}
 
           {activeSection === "settings" && (
             <SettingsPanel
@@ -518,7 +532,25 @@ function DashboardPage({
   );
 }
 
-function OverviewPanel({ driftScore, summary, topSignal, rows, live }) {
+function EmptyMonitoringPanel({ mode }) {
+  return (
+    <section className="dashboardPanel promptPanel">
+      <div className="promptHeader">
+        <div>
+          <span>Monitoring Data</span>
+          <p>
+            {mode === "upload"
+              ? "Choose a CSV batch in Settings to request a live drift report."
+              : "Start the FastAPI backend or refresh the analysis to load a live drift report."}
+          </p>
+        </div>
+        <strong>No payload</strong>
+      </div>
+    </section>
+  );
+}
+
+function OverviewPanel({ data, driftScore, summary, topSignal, rows, live, onSelectFeature }) {
   return (
     <div className="dashboardStack">
       <section className="dashboardGrid topMetrics">
@@ -526,23 +558,21 @@ function OverviewPanel({ driftScore, summary, topSignal, rows, live }) {
         <TrendCard driftScore={driftScore} />
       </section>
 
-      <ResponseComparison topSignal={topSignal} />
-
-      <PromptTester topSignal={topSignal} live={live} />
+      <MonitoringPayloadPanel data={data} topSignal={topSignal} live={live} />
 
       <section className="miniMetricGrid">
         <MetricTile icon={Database} label="Reference Rows" value={formatInteger(summary.reference_rows)} />
         <MetricTile icon={Activity} label="Incoming Rows" value={formatInteger(summary.incoming_rows)} />
         <MetricTile
           icon={AlertTriangle}
-          label="Anomaly Rate"
-          value={formatPercentValue(Number(summary.drift_rate || 0.16) * 0.25, 2)}
+          label="Drift Rate"
+          value={formatFractionPercent(summary.drift_rate, 1)}
           tone="danger"
         />
         <MetricTile icon={Brain} label="Top Signal" value={topSignal.feature} />
       </section>
 
-      <DriftTable rows={rows.slice(0, 5)} />
+      <DriftTable rows={rows.slice(0, 8)} onSelectFeature={onSelectFeature} />
     </div>
   );
 }
@@ -625,38 +655,43 @@ function LineTrend({ values }) {
   );
 }
 
-function ResponseComparison({ topSignal }) {
-  const baseline = `{
-  "status": "success",
-  "message": "The reference response remains inside approved variance.",
-  "feature": "${topSignal.feature}",
-  "sentiment": 0.82,
-  "tokens": 42
-}`;
+function MonitoringPayloadPanel({ data, topSignal, live }) {
+  const sourcePayload = {
+    source: data.source?.label,
+    threshold: data.threshold,
+    generated_at: data.generated_at,
+    monitored_columns: data.monitored_columns?.length ?? 0,
+    missing_columns: data.missing_columns ?? [],
+  };
 
-  const current = `{
-  "status": "active",
-  "message": "Current output shows measurable semantic movement.",
-  "feature": "${topSignal.feature}",
-  "drift_score": ${formatDecimal(topSignal.drift_score, 2)},
-  "tokens": 48
-}`;
+  const signalPayload = {
+    feature: topSignal.feature,
+    status: topSignal.status,
+    severity: topSignal.severity,
+    test: topSignal.test,
+    drift_score: topSignal.drift_score,
+    p_value: topSignal.p_value,
+  };
 
   return (
     <section className="dashboardPanel comparisonPanel">
       <div className="comparisonTitle">
         <div>
           <Zap size={28} />
-          <h2>Response Comparison</h2>
+          <h2>Monitoring Payload</h2>
         </div>
-        <span>Snapshot: 2024-10-12_v1</span>
+        <span>{live ? "Live API" : "Waiting"}</span>
       </div>
       <div className="comparisonGrid">
-        <CodePane title="Baseline Response (Reference)" muted code={baseline} />
         <CodePane
-          title="Current Live Response"
-          badge={`${Math.round(Number(topSignal.drift_score || 0.84) * 100)}% semantic delta`}
-          code={current}
+          title="Incoming Source"
+          muted
+          code={JSON.stringify(sourcePayload, null, 2)}
+        />
+        <CodePane
+          title="Top Drift Signal"
+          badge={`${formatDecimal(topSignal.drift_score, 2)} score`}
+          code={JSON.stringify(signalPayload, null, 2)}
         />
       </div>
     </section>
@@ -675,46 +710,60 @@ function CodePane({ title, badge, code, muted = false }) {
   );
 }
 
-function PromptTester({ topSignal, live }) {
-  const [prompt, setPrompt] = useState("");
-  const [result, setResult] = useState("");
+function RcaPanel({ data, feature }) {
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function executePrompt() {
-    const trimmed = prompt.trim();
-    setResult(
-      trimmed
-        ? `Probe accepted. Driftium will compare this prompt against ${topSignal.feature} and the current ${formatDecimal(
-            topSignal.drift_score,
-            2,
-          )} drift score.`
-        : "Add a prompt before executing a consistency test.",
-    );
+  useEffect(() => {
+    setResult(null);
+    setError("");
+  }, [data?.generated_at, feature]);
+
+  async function requestRca() {
+    if (!data || !feature) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      setResult(await generateRca({ data, feature }));
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <section className="dashboardPanel promptPanel">
       <div className="promptHeader">
         <div>
-          <span>Prompt Tester</span>
-          <p>Verify model consistency with custom inputs</p>
+          <span>Root Cause Analysis</span>
+          <p>Generate a grounded explanation for the selected drift signal.</p>
         </div>
-        <strong>{live ? "GPT-4o (Production)" : "GPT-4o (Local Snapshot)"}</strong>
+        <strong>{feature ?? "No feature"}</strong>
       </div>
-      <textarea
-        aria-label="Prompt test input"
-        placeholder="Type a prompt to test against the baseline..."
-        value={prompt}
-        onChange={(event) => setPrompt(event.target.value)}
-      />
+
       <div className="promptActions">
-        {result && <span>{result}</span>}
-        <button className="historyButton" type="button">
-          <History size={20} />
-          History
-        </button>
-        <button className="cyanButton" type="button" onClick={executePrompt}>
-          <Play size={18} />
-          Execute Test
+        {error && <span>{error}</span>}
+        {!error && result?.available && <span>{result.content}</span>}
+        {!error && result && !result.available && (
+          <span>
+            {result.message}
+            {result.error ? ` Details: ${result.error}` : ""}
+          </span>
+        )}
+        <button
+          className="cyanButton"
+          type="button"
+          onClick={requestRca}
+          disabled={!data || !feature || loading}
+        >
+          {loading ? <SpinnerLabel label="Generating" /> : <Brain size={18} />}
+          {!loading && "Generate RCA"}
         </button>
       </div>
     </section>
@@ -731,29 +780,114 @@ function MetricTile({ icon: Icon, label, value, tone = "neutral" }) {
   );
 }
 
-function DriftAnalysisPanel({ rows, topSignal, summary }) {
+function DriftAnalysisPanel({
+  data,
+  rows,
+  topSignal,
+  summary,
+  activeFeature,
+  featureDetails,
+  onSelectFeature,
+}) {
   return (
     <div className="dashboardStack">
       <section className="dashboardPanel analysisHero">
         <div>
           <span>Drift Analysis</span>
-          <h2>{topSignal.feature}</h2>
+          <h2>{activeFeature ?? topSignal.feature}</h2>
           <p>
-            Highest observed movement from {summary.monitored_feature_count} monitored model
-            signals. Current score: {formatDecimal(topSignal.drift_score, 2)}.
+            Highest observed movement from {summary.monitored_feature_count} monitored signals.
+            Current top score: {formatDecimal(topSignal.drift_score, 2)}.
           </p>
         </div>
         <VectorCube />
       </section>
       <section className="dashboardGrid analysisGrid">
-        <SignalBars rows={rows} />
-        <DriftTable rows={rows} />
+        <SignalBars rows={rows} onSelectFeature={onSelectFeature} />
+        <DriftTable
+          rows={rows}
+          selectedFeature={activeFeature}
+          onSelectFeature={onSelectFeature}
+        />
       </section>
+      <FeatureDetailsPanel featureDetails={featureDetails} />
+      <RcaPanel data={data} feature={activeFeature ?? topSignal.feature} />
     </div>
   );
 }
 
-function SignalBars({ rows }) {
+function FeatureDetailsPanel({ featureDetails }) {
+  if (!featureDetails) {
+    return (
+      <section className="dashboardPanel promptPanel">
+        <div className="promptHeader">
+          <div>
+            <span>Feature Details</span>
+            <p>Select a signal from the monitoring table to inspect its backend details.</p>
+          </div>
+          <strong>No feature</strong>
+        </div>
+      </section>
+    );
+  }
+
+  const metrics = Object.entries(featureDetails.metrics ?? {});
+  const chartRows = featureDetails.chart ?? [];
+  const labelKey = featureDetails.chart_label ?? "bucket";
+
+  return (
+    <section className="dashboardPanel settingsPanel">
+      <div className="comparisonTitle">
+        <div>
+          <Table2 size={28} />
+          <h2>{featureDetails.feature}</h2>
+        </div>
+        <span>{featureDetails.status}</span>
+      </div>
+
+      <div className="settingsGrid">
+        {metrics.map(([key, value]) => (
+          <div className="controlCard" key={key}>
+            <span>{formatMetricLabel(key)}</span>
+            <strong>{formatMetricValue(value)}</strong>
+          </div>
+        ))}
+      </div>
+
+      {featureDetails.shift_summary && (
+        <div className="apiNotice live">
+          <Activity size={18} />
+          {featureDetails.shift_summary}
+        </div>
+      )}
+
+      {chartRows.length > 0 && (
+        <div className="tableFrame">
+          <table>
+            <thead>
+              <tr>
+                <th>{formatMetricLabel(labelKey)}</th>
+                <th>Reference</th>
+                <th>Incoming</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartRows.map((row) => (
+                <tr key={row[labelKey]}>
+                  <td>{row[labelKey]}</td>
+                  <td>{formatMetricValue(row.reference)}</td>
+                  <td>{formatMetricValue(row.incoming)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SignalBars({ rows, onSelectFeature }) {
   const maxScore = Math.max(...rows.map((row) => Number(row.drift_score) || 0), 0.01);
 
   return (
@@ -764,20 +898,25 @@ function SignalBars({ rows }) {
       </div>
       <div className="signalList">
         {rows.map((row) => (
-          <div className="signalRow" key={row.feature}>
+          <button
+            className="signalRow"
+            key={row.feature}
+            type="button"
+            onClick={() => onSelectFeature?.(row.feature)}
+          >
             <span>{row.feature}</span>
             <div>
               <span style={{ width: `${Math.max((row.drift_score / maxScore) * 100, 4)}%` }} />
             </div>
             <strong>{formatDecimal(row.drift_score, 2)}</strong>
-          </div>
+          </button>
         ))}
       </div>
     </article>
   );
 }
 
-function DriftTable({ rows }) {
+function DriftTable({ rows, selectedFeature, onSelectFeature }) {
   return (
     <section className="dashboardPanel tablePanel">
       <div className="panelHeader">
@@ -799,7 +938,11 @@ function DriftTable({ rows }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.feature}>
+              <tr
+                key={row.feature}
+                className={selectedFeature === row.feature ? "selectedRow" : ""}
+                onClick={() => onSelectFeature?.(row.feature)}
+              >
                 <td>{row.feature}</td>
                 <td>{row.type}</td>
                 <td>
@@ -822,11 +965,36 @@ function DriftTable({ rows }) {
   );
 }
 
-function PromptPerformancePanel({ topSignal }) {
+function PromptPerformancePanel({ data, topSignal, activeFeature, featureDetails }) {
   return (
     <div className="dashboardStack">
-      <ResponseComparison topSignal={topSignal} />
-      <PromptTester topSignal={topSignal} live />
+      <MonitoringPayloadPanel data={data} topSignal={topSignal} live />
+      <FeatureDetailsPanel featureDetails={featureDetails} />
+      <RcaPanel data={data} feature={activeFeature ?? topSignal.feature} />
+    </div>
+  );
+}
+
+function FeatureMixBars({ summary }) {
+  const numericCount = Number(summary.numeric_feature_count) || 0;
+  const categoricalCount = Number(summary.categorical_feature_count) || 0;
+  const total = Math.max(numericCount + categoricalCount, 1);
+  const rows = [
+    { label: "Numeric", value: numericCount },
+    { label: "Categorical", value: categoricalCount },
+  ];
+
+  return (
+    <div className="signalList">
+      {rows.map((row) => (
+        <div className="signalRow" key={row.label}>
+          <span>{row.label}</span>
+          <div>
+            <span style={{ width: `${Math.max((row.value / total) * 100, 4)}%` }} />
+          </div>
+          <strong>{formatInteger(row.value)}</strong>
+        </div>
+      ))}
     </div>
   );
 }
@@ -837,14 +1005,14 @@ function TokenUsagePanel({ summary }) {
       <section className="dashboardGrid tokenGrid">
         <article className="dashboardPanel tokenDetail">
           <div className="panelHeader">
-            <span>Token Latency</span>
-            <strong>Live</strong>
+            <span>Feature Type Mix</span>
+            <strong>{formatInteger(summary.monitored_feature_count)} signals</strong>
           </div>
-          <TokenBars />
+          <FeatureMixBars summary={summary} />
         </article>
         <article className="dashboardPanel tokenDetail">
           <div className="panelHeader">
-            <span>Usage Envelope</span>
+            <span>Monitoring Envelope</span>
             <strong>{formatFractionPercent(summary.drift_rate)}</strong>
           </div>
           <dl>
@@ -1002,6 +1170,7 @@ export default function App() {
         setData(payload);
       } catch (requestError) {
         if (requestError.name !== "AbortError") {
+          setData(null);
           setError(requestError.message);
         }
       } finally {
