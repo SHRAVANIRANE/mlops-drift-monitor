@@ -115,3 +115,12 @@ export async function fetchLlmSamples() {
   return response.json();
 }
 
+export async function fetchLlmRca() {
+  const response = await fetch(`${API_BASE_URL}/drift/rca`);
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+

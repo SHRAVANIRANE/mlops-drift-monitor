@@ -31,7 +31,9 @@ import {
   fetchLlmDrift,
   fetchLlmDriftHistory,
   fetchLlmSamples,
+  fetchLlmRca,
 } from "./api.js";
+
 
 const TOP_NAV = ["Models", "Integrations", "Alerts", "Docs"];
 
@@ -366,10 +368,11 @@ function TokenBars({ compact = false }) {
   );
 }
 
-function LlmDriftPanel() {
+function LlmDriftPanel({ activeSection, requestNonce }) {
   const [drift, setDrift] = useState(null);
   const [history, setHistory] = useState([]);
   const [samples, setSamples] = useState(null);
+  const [rca, setRca] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -378,14 +381,16 @@ function LlmDriftPanel() {
       try {
         setLoading(true);
         setError("");
-        const [driftRes, historyRes, samplesRes] = await Promise.all([
+        const [driftRes, historyRes, samplesRes, rcaRes] = await Promise.all([
           fetchLlmDrift(),
           fetchLlmDriftHistory(),
-          fetchLlmSamples()
+          fetchLlmSamples(),
+          fetchLlmRca()
         ]);
         setDrift(driftRes);
         setHistory(historyRes);
         setSamples(samplesRes);
+        setRca(rcaRes);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -393,7 +398,7 @@ function LlmDriftPanel() {
       }
     }
     loadData();
-  }, []);
+  }, [activeSection, requestNonce]);
 
   if (loading) {
     return (
@@ -470,6 +475,65 @@ function LlmDriftPanel() {
         <MetricTile icon={Zap} label="Telemetry Size" value={samples?.current?.length ?? 0} />
       </section>
 
+      {/* Root Cause Analysis Card */}
+      <section className="dashboardPanel promptPanel">
+        <div className="promptHeader">
+          <div>
+            <span>Root Cause Analysis</span>
+            <p>Explain why the LLM response distribution shifted.</p>
+          </div>
+          <strong className={`statusLabel ${rca?.severity?.toLowerCase() === "critical" || rca?.severity?.toLowerCase() === "high" ? "critical" : rca?.severity?.toLowerCase() === "medium" ? "warning" : "stable"}`}>
+            {rca?.severity || "Stable"}
+          </strong>
+        </div>
+
+        <div style={{ padding: "30px", display: "grid", gap: "20px" }}>
+          <div>
+            <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase" }}>
+              Possible Cause:
+            </strong>
+            <p style={{ fontSize: "1.1rem", marginTop: "4px", color: "var(--text)" }}>
+              {rca?.possible_cause || "No cause identified."}
+            </p>
+          </div>
+
+          <div>
+            <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase" }}>
+              Summary:
+            </strong>
+            <p style={{ fontSize: "1rem", marginTop: "4px", color: "var(--muted-strong)" }}>
+              {rca?.summary || "No summary available."}
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "10px" }}>
+            <div>
+              <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
+                Baseline Examples:
+              </strong>
+              <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: "var(--muted-strong)" }}>
+                {rca?.baseline_examples?.map((ex, idx) => (
+                  <li key={idx} style={{ marginBottom: "4px" }}>{ex}</li>
+                ))}
+                {!rca?.baseline_examples?.length && <li>No examples</li>}
+              </ul>
+            </div>
+
+            <div>
+              <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
+                Current Examples:
+              </strong>
+              <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: "var(--muted-strong)" }}>
+                {rca?.telemetry_examples?.map((ex, idx) => (
+                  <li key={idx} style={{ marginBottom: "4px" }}>{ex}</li>
+                ))}
+                {!rca?.telemetry_examples?.length && <li>No examples</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="dashboardPanel comparisonPanel">
         <div className="comparisonTitle">
           <div>
@@ -491,6 +555,7 @@ function LlmDriftPanel() {
         </div>
       </section>
     </div>
+
   );
 }
 
@@ -689,6 +754,7 @@ function DashboardPage({
   uploadFile,
   setUploadFile,
   reload,
+  requestNonce,
   onLanding,
   onDashboard,
 }) {
@@ -832,7 +898,7 @@ function DashboardPage({
           )}
 
           {activeSection === "llm_drift" && (
-            <LlmDriftPanel />
+            <LlmDriftPanel activeSection={activeSection} requestNonce={requestNonce} />
           )}
 
           {activeSection === "llm_playground" && (
@@ -1578,6 +1644,7 @@ export default function App() {
       uploadFile={uploadFile}
       setUploadFile={setUploadFile}
       reload={() => setRequestNonce((current) => current + 1)}
+      requestNonce={requestNonce}
       onLanding={() => setScreen("landing")}
       onDashboard={enterDashboard}
     />
