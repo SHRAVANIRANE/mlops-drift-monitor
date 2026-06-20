@@ -6,7 +6,7 @@ from typing import Any
 import ollama
 
 
-DEFAULT_MODEL = "phi3:mini"
+DEFAULT_MODEL = "smollm:135m"
 UNAVAILABLE_MESSAGE = (
     "RCA is unavailable because Ollama is not running or the configured model could not be reached."
 )

@@ -9,7 +9,7 @@
 - Added categorical drift detection with chi-square contingency tests and Cramer's V.
 - Converted drift outputs into a structured report with severity, p-values, sample counts, and shifted segments.
 - Built a Streamlit monitoring console with overview, feature analysis, RCA, and report export views.
-- Integrated local LLM explanations through Ollama and `phi3:mini`.
+- Integrated local LLM explanations through Ollama and `smollm:135m`.
 - Added pytest coverage for core monitoring behavior.
 - Added GitHub Actions CI for automated test runs.
 

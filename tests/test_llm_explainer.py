@@ -19,7 +19,7 @@ def test_generate_explanation_result_returns_content_when_ollama_succeeds(monkey
         available=True,
         content="Investigate the age shift.",
         error=None,
-        model="phi3:mini",
+        model="smollm:135m",
     )
 
 
@@ -34,7 +34,7 @@ def test_generate_explanation_result_returns_unavailable_when_ollama_fails(monke
     assert not result.available
     assert result.content == ""
     assert result.error == "connection refused"
-    assert result.model == "phi3:mini"
+    assert result.model == "smollm:135m"
 
 
 def test_generate_explanation_string_wrapper_keeps_compatibility(monkeypatch):

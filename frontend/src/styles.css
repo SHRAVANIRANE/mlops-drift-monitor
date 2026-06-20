@@ -1624,3 +1624,93 @@ dd {
   border-color: var(--cyan);
 }
 
+.emptyStatePanel {
+  padding: 44px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(23, 28, 35, 0.98);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.emptyStateContent {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.emptyStateContent h2 {
+  font-size: 2.2rem;
+  color: #dfeeff;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.emptyStateContent p {
+  font-size: 1.15rem;
+  color: var(--muted-strong);
+  line-height: 1.6;
+}
+
+.emptyStateSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0 32px;
+  width: 100%;
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--line-soft);
+  background: rgba(12, 32, 49, 0.28);
+  border-radius: 2px;
+  text-align: center;
+}
+
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--cyan-soft);
+  border: 1px solid var(--cyan);
+  color: var(--cyan-strong);
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.stepItem div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stepItem strong {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.stepItem p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .emptyStateSteps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+

@@ -12,7 +12,7 @@ def test_main_smoke_path_does_not_require_ollama(monkeypatch, tmp_path):
             available=False,
             content="",
             error="offline",
-            model="phi3:mini",
+            model="smollm:135m",
         ),
     )
 

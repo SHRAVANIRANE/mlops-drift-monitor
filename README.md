@@ -4,7 +4,7 @@
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite)](https://vitejs.dev)
 [![Qdrant](https://img.shields.io/badge/Qdrant-Active-red?style=flat)](https://qdrant.tech)
-[![Ollama](https://img.shields.io/badge/Ollama-phi3%3Amini-orange?style=flat)](https://ollama.com)
+[![Ollama](https://img.shields.io/badge/Ollama-smollm%3A135m-orange?style=flat)](https://ollama.com)
 [![pytest](https://img.shields.io/badge/pytest-passed-success?style=flat&logo=pytest)](https://docs.pytest.org)
 
 Driftium is an open-source, recruiter-friendly MLOps telemetry console and LLM observability platform. It is designed to trace statistical feature drift in tabular data pipelines and semantic distribution shifts in Large Language Model (LLM) responses. By analyzing incoming production telemetry against reference baselines, Driftium translates abstract distribution deltas and topic shifts into developer-friendly, LLM-generated Root Cause Analysis (RCA) summaries.
@@ -39,11 +39,16 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
     *   **Stability Trend Line**: Graph tracing the historical health index and MMD scores over the last 20 calculations.
     *   **Response Comparer**: Side-by-side view of active baseline responses vs. current telemetry responses.
 *   **Interactive Prompt Playground**:
-    *   **Direct Generation**: Send custom prompt instructions to local Ollama (`phi3:mini`) and view responses instantly.
+    *   **Direct Generation**: Send custom prompt instructions to local Ollama (`smollm:135m`) and view responses instantly.
     *   **Baseline Promotion**: Promote current telemetry response lists to the baseline pool with a single click (`POST /baseline`).
-*   **LLM-Powered Root Cause Analysis**:
-    *   **Semantic RCA Card**: Compares baseline samples against current telemetry responses and queries Ollama to output structured topic-shift summaries.
-    *   **Offline Fallbacks**: Graceful rule-based fallback defaults to statistical summaries when the Ollama daemon is offline or returns an invalid structure.
+    *   **Auto-Sync**: Automatically refreshes the main dashboard telemetry state when a baseline is promoted or new responses are generated.
+*   **Agentic AI Root Cause Analysis (RCA)**:
+    *   **Collaborative Multi-Agent Flow**: Sequentially routes drift telemetry through specialized agents (**Triage Agent**, **Diagnosis Agent**, and **Recommendation Agent**) via an **Orchestrator** to compile a final structured RCA report.
+    *   **Developer Trace Console**: Displays a retro, terminal-style step-by-step developer log of agent communication and reasoning directly in the UI.
+    *   **Offline Fallbacks**: Graceful rule-based fallbacks default to statistical summaries if the Ollama daemon is offline or returns an invalid structure.
+*   **Persistent SQLite Storage**:
+    *   **Drift History Persistence**: Automatically persists calculated drift metrics to a local SQLite database (`drift_history.db`).
+    *   **Auto-Recovery & Maintenance**: Automatically initializes tables on start and limits table size to the latest 1000 records. Timestamps are stored in UTC ISO format.
 *   **Tabular Data Drift Monitoring**:
     *   **Kolmogorov-Smirnov (KS) Test**: Compares continuous/numeric fields to detect distribution variances.
     *   **Chi-Square & Cramer's V**: Evaluates categorical fields and ranks them by effect size.
@@ -51,7 +56,7 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
     *   **Tabular LLM Explainer**: Summarizes flagged tabular drift anomalies in natural language.
 
 ### Planned Features (Roadmap)
-*   **Persistent Relational Database**: Migrate in-memory response lists and historical drift logs to a persistent PostgreSQL schema.
+*   **Persistent Prompt Pools**: Migrate raw in-memory response lists to a persistent database schema.
 *   **Automated Scraper Cron Jobs**: Schedule background scrapers to pull model logs automatically instead of relying on manual playground generations.
 *   **Alert Webhook Integrations**: Route critical drift severity alerts directly to Slack, Teams, or PagerDuty.
 
@@ -72,15 +77,17 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
 
 ### Database
 *   **Vector Database**: Qdrant (Client running in local `:memory:` mode for prompt-response embedding comparisons)
-*   **Data Storage**: In-memory telemetry queues and historical trend arrays
+*   **Relational Database**: SQLite for persistent historical drift logs (`drift_history.db`)
+*   **Data Storage**: In-memory telemetry queues and persistent historical trend records
 
 ### MLOps / AI Components
 *   **Embedding Pipeline**: Sentence Transformers (`all-MiniLM-L6-v2` generating 384-dimensional vector embeddings)
-*   **Local LLM Host**: Ollama (`phi3:mini` for playground generation and RCA agent summaries)
+*   **Local LLM Host**: Ollama (`smollm:135m` footprint optimized to ~240MB RAM usage)
+*   **Multi-Agent System**: Sequential agent orchestrator (Triage, Diagnosis, Recommendation agents)
 
 ### Infrastructure
 *   **CI & Automation**: GitHub Actions workflow (automating linting, formatting, and unit tests)
-*   **Testing**: Pytest framework (running statistical, database, and validation checks)
+*   **Testing**: Pytest framework (automated suite running 27 validation checks covering agents, DB persistence, and scorers)
 
 ---
 
@@ -117,13 +124,13 @@ graph TD
         Scorer -->|Drift Scores| API
     end
     
-    Ollama -->|phi3:mini| LlmRca
-    Ollama -->|phi3:mini| API
+    Ollama -->|smollm:135m| LlmRca
+    Ollama -->|smollm:135m| API
 ```
 
 ---
 
-## Project Structure
+### Project Structure
 
 ```text
 mlops-drift-monitor/
@@ -137,6 +144,12 @@ mlops-drift-monitor/
 │   └── vite.config.js            # Vite configurations
 ├── src/                          # Backend source code modules
 │   ├── llm_monitoring/           # LLM Observability & Semantic Drift Engine
+│   │   ├── agents/               # Multi-Agent RCA workflow package
+│   │   │   ├── __init__.py
+│   │   │   ├── triage_agent.py   # Analyzes numerical severity thresholds
+│   │   │   ├── diagnosis_agent.py # Analyzes topic/semantic shift logs
+│   │   │   ├── recommendation_agent.py # Formulates action recommendations
+│   │   │   └── orchestrator.py   # Orchestrates sequential agent invocations
 │   │   ├── api.py                # LLM API endpoints (/generate, /drift, /samples, /drift/rca)
 │   │   ├── embedder.py           # Sentence Transformers embedding mapping
 │   │   ├── llm_drift_scorer.py   # Centroid distance and MMD calculation
@@ -150,9 +163,15 @@ mlops-drift-monitor/
 │   └── llm/                      # Tabular LLM RCA agent
 │       └── llm_explainer.py      # Ollama helper for tabular RCA
 ├── tests/                        # Automated Pytest suite
+│   ├── test_agentic_rca.py       # Unit tests for multi-agent RCA system
 │   ├── test_drift_detection.py   # Statistical check validations
 │   ├── test_vector_store.py      # Qdrant vector store upsert/retrieval checks
-│   └── test_monitoring_service.py # Tabular service integrations
+│   ├── test_monitoring_service.py # Tabular service integrations
+│   └── test_persistence.py       # SQLite database persistence tests
+├── main.py                       # CLI workflow entry point
+├── pytest.ini                    # Pytest framework configurations
+├── requirements.txt              # Python requirements and package list
+```r service integrations
 ├── main.py                       # CLI workflow entry point
 ├── pytest.ini                    # Pytest framework configurations
 └── requirements.txt              # Python requirements and package list
@@ -174,7 +193,7 @@ mlops-drift-monitor/
 *   **Node.js**: Node 18+ (with `npm`)
 *   **Ollama**: Installed and running locally. Run the model using:
     ```bash
-    ollama pull phi3:mini
+    ollama pull smollm:135m
     ```
 
 ### Backend Setup
@@ -240,6 +259,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 | `/drift/history` | `GET` | Retrieve last 20 drift history calculation logs | None | `[{"timestamp": "...", "centroid_score": 0.22, "mmd_score": 0.05, "severity": "LOW"}]` |
 | `/samples` | `GET` | Fetch active baseline and current telemetry text samples | None | `{"baseline": ["..."], "current": ["..."]}` |
 | `/drift/rca` | `GET` | Compare response pools and return semantic topic shift analysis | None | `{"baseline_size": 4, "telemetry_size": 3, "severity": "CRITICAL", "summary": "...", "possible_cause": "..."}` |
+| `/drift/agentic-rca` | `GET` | Execute the collaborative Multi-Agent RCA workflow and return structured report | None | `{"triage": {...}, "diagnosis": {...}, "recommendations": [...], "agent_collaboration_log": [...]}` |
 
 ---
 
@@ -279,13 +299,13 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 ---
 
 ## Current Limitations
-*   **Transient Memory Lifecycles**: Since Qdrant runs in-memory and telemetry history arrays are cached in FastAPI global variables, restarting the backend server resets all response pools and trend histories.
-*   **Local Hardware Bottlenecks**: Processing completions on CPU/GPU via Ollama is subject to local compute latencies. If the local system experiences resource strain, playground generation times will increase.
+*   **Transient Memory Lifecycles**: Since Qdrant runs in-memory, restarting the backend server resets active baseline/telemetry response pools, but the computed trend history is now safely persisted in SQLite.
+*   **Local Hardware Bottlenecks**: Processing completions on CPU/GPU via Ollama is subject to local compute latencies. However, the system's model footprint has been minimized to avoid resource exhaustion.
 
 ---
 
 ## Future Improvements
-*   **Database Ingestion Layers**: Integrate SQLite/PostgreSQL connectors to persist drift logs, telemetry text, and baseline histories permanently.
+*   **Database Ingestion Layers**: SQLite database integration is implemented for drift history logs; future enhancements will extend this to persist raw response pools and baseline histories permanently.
 *   **Asynchronous Inference Queues**: Introduce Celery or Redis queues to process prompt generations asynchronously, preventing request timeouts.
 *   **Metric Alerting Rules**: Implement customizable drift severity thresholds to dispatch webhooks to production alerts automatically.
 
@@ -293,11 +313,12 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 ## Resume Highlights
 *   **Built an End-to-End MLOps Drift Monitor & LLM Observability Platform** utilizing FastAPI, React (Vite), Sentence Transformers, and Qdrant to detect tabular and semantic drift in real-time.
+*   **Designed a Collaborative Multi-Agent AI System** incorporating Triage, Diagnosis, and Recommendation agents orchestrated sequentially to automatically troubleshoot and explain semantic drift.
 *   **Engineered Statistical Analysis Engines** in Python using SciPy to perform Kolmogorov-Smirnov (KS) and Chi-square contingency tests, flagging feature deviations in incoming dataset telemetry.
 *   **Implemented High-Dimensional LLM Observability** by computing centroid cosine distance and Maximum Mean Discrepancy (MMD) scores over 384-dimensional response embeddings.
-*   **Integrated Local LLM Agents** utilizing Ollama (`phi3:mini`) to compare response pools and perform automated, natural language Root Cause Analysis (RCA) on detected semantic anomalies.
+*   **Integrated Local LLM Agents** utilizing Ollama (`smollm:135m`) to compare response pools and perform automated, natural language Root Cause Analysis (RCA) on detected semantic anomalies.
 *   **Designed a Robust Unified Server Architecture** using FastAPI sub-app mounting to bundle tabular and LLM observability engines under a single CORS configuration on port 8000.
-*   **Authored Exhaustive Automated Test Suites** in Pytest validating vector database writes, statistical thresholds, CLI CSV exporters, and empty-state fallbacks.
+*   **Authored Exhaustive Automated Test Suites** in Pytest validating vector database writes, statistical thresholds, agent orchestration, and SQLite persistence.
 
 ---
 
@@ -307,12 +328,15 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. Datadog) monitor system status like CPU or latency, but cannot spot mathematical data drift or semantic topic shifts. Driftium was built to bridge this gap, giving AI engineers a unified visual dashboard that alerts on distribution shifts and provides prompt explanations of *why* the data shifted.
 
 ### Design Decisions
+*   **Collaborative Multi-Agent Architecture**: Replaced the legacy single-prompt RCA with a collaborative multi-agent setup. Running specialized agents (Triage, Diagnosis, Recommendations) in sequence enforces separation of concerns, improves structured reasoning, and produces highly detailed next steps.
+*   **Model Optimization for Local Hosts**: Shifted LLM reasoning from `phi3:mini` (2.2 GB) to `smollm:135m` (91 MB). This optimization reduced local memory usage from 3.8 GiB to 242 MiB RAM, preventing out-of-memory errors on evaluators' systems while maintaining execution latency under 1 second.
 *   **Embedding Model Selection**: Sentence Transformers (`all-MiniLM-L6-v2`) was selected because it generates compact 384-dimensional vector embeddings, significantly reducing memory footprint and processing latency compared to larger models, while maintaining rich semantic density.
 *   **FastAPI Sub-App Mounting**: Rather than managing multiple backend servers, ports, and CORS setups, mounting the LLM observatory at the root `/` of the tabular monitoring app enables single-port execution.
 *   **Rule-Based Exception Handling**: LLM services hosted locally can be volatile. The RCA module detects Ollama timeouts or failure codes and gracefully falls back to deterministic rule-based analysis, ensuring high system uptime.
 
 ### Challenges Solved
-*   **Stale Dashboard Telemetry Trends**: Resolved a bug where the `/drift` evaluation endpoint generated metrics but failed to store them. Implemented a telemetry logging array in the backend (`drift_history`) to record scores, resolving the flat dashboard trend line.
+*   **Stale Dashboard Telemetry Trends & SQLite Persistence**: Resolved a bug where the `/drift` evaluation endpoint generated metrics but failed to store them. Implemented a persistent SQLite database storage mechanism (`drift_history.db`) in the backend to record and load scores across server restarts, resolving the flat dashboard trend line and maintaining historical data.
+*   **Playground Prop Desynchronization**: Fixed a frontend bug where the prompt playground component was not properly bound to the parent refresh context. Corrected the signature to accept and trigger the `reload` prop on successful generation/promotion, ensuring drift metrics refresh instantly on tab switch.
 *   **Sub-App Route Conflicts**: Solved routing blockages by arranging endpoints such that specific static routes take precedence, while mounting the sub-app as a root-level fallback.
 
 ### Scalability Considerations

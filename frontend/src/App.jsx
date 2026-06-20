@@ -32,6 +32,7 @@ import {
   fetchLlmDriftHistory,
   fetchLlmSamples,
   fetchLlmRca,
+  fetchLlmAgenticRca,
 } from "./api.js";
 
 
@@ -368,11 +369,13 @@ function TokenBars({ compact = false }) {
   );
 }
 
-function LlmDriftPanel({ activeSection, requestNonce }) {
+function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
   const [drift, setDrift] = useState(null);
   const [history, setHistory] = useState([]);
   const [samples, setSamples] = useState(null);
   const [rca, setRca] = useState(null);
+  const [agenticRca, setAgenticRca] = useState(null);
+  const [rcaTab, setRcaTab] = useState("agentic");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -381,16 +384,18 @@ function LlmDriftPanel({ activeSection, requestNonce }) {
       try {
         setLoading(true);
         setError("");
-        const [driftRes, historyRes, samplesRes, rcaRes] = await Promise.all([
-          fetchLlmDrift(),
+        const driftRes = await fetchLlmDrift();
+        const [historyRes, samplesRes, rcaRes, agenticRcaRes] = await Promise.all([
           fetchLlmDriftHistory(),
           fetchLlmSamples(),
-          fetchLlmRca()
+          fetchLlmRca(),
+          fetchLlmAgenticRca()
         ]);
         setDrift(driftRes);
         setHistory(historyRes);
         setSamples(samplesRes);
         setRca(rcaRes);
+        setAgenticRca(agenticRcaRes);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -409,50 +414,65 @@ function LlmDriftPanel({ activeSection, requestNonce }) {
     );
   }
 
-  if (error || drift?.error) {
-    const errorMsg = error || drift?.error;
+  const errorMsg = error || drift?.error;
+  const isBaselineEmpty = errorMsg && errorMsg.includes("Baseline response pool is empty");
+  const isCurrentEmpty = errorMsg && (errorMsg.includes("No current telemetry responses collected") || errorMsg.includes("Need both baseline"));
+
+  if (errorMsg && !isBaselineEmpty && !isCurrentEmpty) {
     return (
       <div className="dashboardStack">
         <div className="apiNotice">
           <AlertTriangle size={18} />
-          {errorMsg.includes("Need both baseline") ? (
-            <span>
-              <strong>No baseline set.</strong> Please run the simulator or establish a baseline via CLI/API first.
-            </span>
-          ) : (
-            `Failed to load LLM monitoring data: ${errorMsg}`
-          )}
+          {`Failed to load LLM monitoring data: ${errorMsg}`}
         </div>
       </div>
     );
   }
 
   const centroidVal = drift?.centroid_score ?? 0;
-  const healthScore = Math.max(0, Math.min(100, Math.round((1 - centroidVal) * 100)));
-  const tone = drift?.severity === "CRITICAL" || drift?.severity === "HIGH" ? "critical" : drift?.severity === "MEDIUM" ? "warning" : "stable";
+  const healthScore = (isBaselineEmpty || isCurrentEmpty) ? "--" : Math.max(0, Math.min(100, Math.round((1 - centroidVal) * 100)));
+  const tone = (isBaselineEmpty || isCurrentEmpty) ? "stable" : (drift?.severity === "CRITICAL" || drift?.severity === "HIGH" ? "critical" : drift?.severity === "MEDIUM" ? "warning" : "stable");
 
   const trendValues = history.map(item => Math.max(0, Math.min(100, Math.round((1 - item.centroid_score) * 100))));
-  const displayTrendValues = trendValues.length > 1 ? trendValues : Array(10).fill(healthScore);
+  const displayTrendValues = (isBaselineEmpty || isCurrentEmpty) ? Array(10).fill(50) : (trendValues.length > 1 ? trendValues : Array(10).fill(healthScore));
 
   return (
     <div className="dashboardStack">
+      {isBaselineEmpty && (
+        <div className="apiNotice">
+          <AlertTriangle size={18} />
+          <span>
+            <strong>No baseline set.</strong> Please run the simulator or establish a baseline via CLI/API first.
+          </span>
+        </div>
+      )}
+
+      {isCurrentEmpty && (
+        <div className="apiNotice live">
+          <Activity size={18} />
+          <span>
+            <strong>Baseline established ({samples?.baseline?.length ?? 0} responses).</strong> Waiting for current session telemetry responses.
+          </span>
+        </div>
+      )}
+
       <section className="dashboardGrid topMetrics">
         <article className="dashboardPanel driftScorePanel">
           <div className="panelHeader">
             <span>LLM Semantic Health</span>
             <strong className={`statusLabel ${tone}`}>
-              {drift?.severity || "LOW"}
+              {(isBaselineEmpty || isCurrentEmpty) ? "--" : (drift?.severity || "LOW")}
             </strong>
           </div>
           <div className="scoreValue">
             <strong>{healthScore}</strong>
-            <span>/100</span>
+            {healthScore !== "--" && <span>/100</span>}
           </div>
           <div className="scoreTrack">
-            <span style={{ width: `${healthScore}%` }} />
+            <span style={{ width: `${healthScore === "--" ? 0 : healthScore}%` }} />
           </div>
           <p>
-            Centroid cosine distance: {formatDecimal(drift?.centroid_score, 4)}. MMD Score: {formatDecimal(drift?.mmd_score, 4)}.
+            Centroid cosine distance: {(isBaselineEmpty || isCurrentEmpty) ? "--" : formatDecimal(drift?.centroid_score, 4)}. MMD Score: {(isBaselineEmpty || isCurrentEmpty) ? "--" : formatDecimal(drift?.mmd_score, 4)}.
           </p>
         </article>
 
@@ -469,97 +489,328 @@ function LlmDriftPanel({ activeSection, requestNonce }) {
       </section>
 
       <section className="miniMetricGrid">
-        <MetricTile icon={Activity} label="Centroid Distance" value={formatDecimal(drift?.centroid_score, 4)} />
-        <MetricTile icon={SlidersHorizontal} label="MMD Score" value={formatDecimal(drift?.mmd_score, 4)} />
-        <MetricTile icon={Database} label="Baseline Size" value={samples?.baseline?.length ?? 0} />
-        <MetricTile icon={Zap} label="Telemetry Size" value={samples?.current?.length ?? 0} />
+        <MetricTile icon={Activity} label="Centroid Distance" value={(isBaselineEmpty || isCurrentEmpty) ? "--" : formatDecimal(drift?.centroid_score, 4)} />
+        <MetricTile icon={SlidersHorizontal} label="MMD Score" value={(isBaselineEmpty || isCurrentEmpty) ? "--" : formatDecimal(drift?.mmd_score, 4)} />
+        <MetricTile icon={Database} label="Baseline Size" value={(isBaselineEmpty || isCurrentEmpty) ? (samples?.baseline?.length ?? 0) : (samples?.baseline?.length ?? 0)} />
+        <MetricTile icon={Zap} label="Telemetry Size" value={(isBaselineEmpty || isCurrentEmpty) ? (samples?.current?.length ?? 0) : (samples?.current?.length ?? 0)} />
       </section>
 
-      {/* Root Cause Analysis Card */}
-      <section className="dashboardPanel promptPanel">
-        <div className="promptHeader">
-          <div>
-            <span>Root Cause Analysis</span>
-            <p>Explain why the LLM response distribution shifted.</p>
-          </div>
-          <strong className={`statusLabel ${rca?.severity?.toLowerCase() === "critical" || rca?.severity?.toLowerCase() === "high" ? "critical" : rca?.severity?.toLowerCase() === "medium" ? "warning" : "stable"}`}>
-            {rca?.severity || "Stable"}
-          </strong>
-        </div>
-
-        <div style={{ padding: "30px", display: "grid", gap: "20px" }}>
-          <div>
-            <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase" }}>
-              Possible Cause:
-            </strong>
-            <p style={{ fontSize: "1.1rem", marginTop: "4px", color: "var(--text)" }}>
-              {rca?.possible_cause || "No cause identified."}
+      {isBaselineEmpty ? (
+        <section className="dashboardPanel emptyStatePanel">
+          <div className="emptyStateContent">
+            <h2>Getting Started with LLM Drift Monitoring</h2>
+            <p>
+              To monitor semantic drift and response variance, you must first establish a baseline using prompt response telemetry.
             </p>
+            <div className="emptyStateSteps">
+              <div className="stepItem">
+                <span className="stepNumber">1</span>
+                <div>
+                  <strong>Interact with the Model</strong>
+                  <p>Go to the Prompt Playground to generate response distributions for test prompts.</p>
+                </div>
+              </div>
+              <div className="stepItem">
+                <span className="stepNumber">2</span>
+                <div>
+                  <strong>Establish Baseline</strong>
+                  <p>Promote the current session responses as your production baseline.</p>
+                </div>
+              </div>
+              <div className="stepItem">
+                <span className="stepNumber">3</span>
+                <div>
+                  <strong>Monitor Drift</strong>
+                  <p>Generate new prompts to collect telemetry and view semantic stability and root cause reports in real-time.</p>
+                </div>
+              </div>
+            </div>
+            <button
+              className="cyanButton"
+              type="button"
+              onClick={() => setActiveSection("llm_playground")}
+            >
+              <SlidersHorizontal size={18} />
+              Open Prompt Playground
+            </button>
           </div>
-
-          <div>
-            <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase" }}>
-              Summary:
-            </strong>
-            <p style={{ fontSize: "1rem", marginTop: "4px", color: "var(--muted-strong)" }}>
-              {rca?.summary || "No summary available."}
+        </section>
+      ) : isCurrentEmpty ? (
+        <section className="dashboardPanel emptyStatePanel">
+          <div className="emptyStateContent">
+            <h2>Waiting for Telemetry Responses</h2>
+            <p>
+              Your baseline is established. Now you need to generate telemetry responses to calculate semantic drift and run multi-agent diagnostics.
             </p>
+            <div className="emptyStateSteps">
+              <div className="stepItem">
+                <span className="stepNumber">1</span>
+                <div>
+                  <strong>Generate Telemetry Responses</strong>
+                  <p>Go to the Prompt Playground and type queries (e.g. on a different topic from the baseline) to generate responses.</p>
+                </div>
+              </div>
+              <div className="stepItem">
+                <span className="stepNumber">2</span>
+                <div>
+                  <strong>Monitor Drift & RCA</strong>
+                  <p>Return to this dashboard tab to view the real-time semantic stability scores and collaborative agent reports.</p>
+                </div>
+              </div>
+            </div>
+            <button
+              className="cyanButton"
+              type="button"
+              onClick={() => setActiveSection("llm_playground")}
+            >
+              <SlidersHorizontal size={18} />
+              Open Prompt Playground
+            </button>
           </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "10px" }}>
-            <div>
-              <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
-                Baseline Examples:
-              </strong>
-              <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: "var(--muted-strong)" }}>
-                {rca?.baseline_examples?.map((ex, idx) => (
-                  <li key={idx} style={{ marginBottom: "4px" }}>{ex}</li>
-                ))}
-                {!rca?.baseline_examples?.length && <li>No examples</li>}
-              </ul>
+        </section>
+      ) : (
+        <>
+          {/* Root Cause Analysis Card */}
+          <section className="dashboardPanel promptPanel">
+            <div className="promptHeader" style={{ borderBottom: "1px solid var(--line-soft)", paddingBottom: "15px" }}>
+              <div>
+                <span>Root Cause Analysis</span>
+                <p>Explain why the LLM response distribution shifted.</p>
+              </div>
+              <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+                <div style={{
+                  display: "inline-flex",
+                  background: "var(--page-deep)",
+                  borderRadius: "4px",
+                  padding: "3px",
+                  border: "1px solid var(--line-soft)"
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setRcaTab("agentic")}
+                    style={{
+                      border: 0,
+                      background: rcaTab === "agentic" ? "var(--panel-strong)" : "transparent",
+                      color: rcaTab === "agentic" ? "var(--cyan-strong)" : "var(--muted)",
+                      padding: "6px 12px",
+                      borderRadius: "3px",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    🤖 Multi-Agent RCA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRcaTab("heuristic")}
+                    style={{
+                      border: 0,
+                      background: rcaTab === "heuristic" ? "var(--panel-strong)" : "transparent",
+                      color: rcaTab === "heuristic" ? "var(--cyan-strong)" : "var(--muted)",
+                      padding: "6px 12px",
+                      borderRadius: "3px",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    Legacy Summary
+                  </button>
+                </div>
+                <strong className={`statusLabel ${rcaTab === "agentic" ? (agenticRca?.metadata?.severity?.toLowerCase() === "critical" || agenticRca?.metadata?.severity?.toLowerCase() === "high" ? "critical" : agenticRca?.metadata?.severity?.toLowerCase() === "medium" ? "warning" : "stable") : (rca?.severity?.toLowerCase() === "critical" || rca?.severity?.toLowerCase() === "high" ? "critical" : rca?.severity?.toLowerCase() === "medium" ? "warning" : "stable")}`}>
+                  {rcaTab === "agentic" ? (agenticRca?.metadata?.severity || "Stable") : (rca?.severity || "Stable")}
+                </strong>
+              </div>
             </div>
 
-            <div>
-              <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
-                Current Examples:
-              </strong>
-              <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: "var(--muted-strong)" }}>
-                {rca?.telemetry_examples?.map((ex, idx) => (
-                  <li key={idx} style={{ marginBottom: "4px" }}>{ex}</li>
-                ))}
-                {!rca?.telemetry_examples?.length && <li>No examples</li>}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
+            {rcaTab === "heuristic" ? (
+              <div style={{ padding: "30px", display: "grid", gap: "20px" }}>
+                <div>
+                  <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase" }}>
+                    Possible Cause:
+                  </strong>
+                  <p style={{ fontSize: "1.1rem", marginTop: "4px", color: "var(--text)" }}>
+                    {rca?.possible_cause || "No cause identified."}
+                  </p>
+                </div>
 
-      <section className="dashboardPanel comparisonPanel">
-        <div className="comparisonTitle">
-          <div>
-            <Table2 size={28} />
-            <h2>Active LLM Samples</h2>
-          </div>
-          <span>Side-by-Side</span>
-        </div>
-        <div className="comparisonGrid">
-          <CodePane
-            title="Baseline Response Samples"
-            muted
-            code={JSON.stringify(samples?.baseline || [], null, 2)}
-          />
-          <CodePane
-            title="Current Response Samples"
-            code={JSON.stringify(samples?.current || [], null, 2)}
-          />
-        </div>
-      </section>
+                <div>
+                  <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase" }}>
+                    Summary:
+                  </strong>
+                  <p style={{ fontSize: "1rem", marginTop: "4px", color: "var(--muted-strong)" }}>
+                    {rca?.summary || "No summary available."}
+                  </p>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "10px" }}>
+                  <div>
+                    <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
+                      Baseline Examples:
+                    </strong>
+                    <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: "var(--muted-strong)" }}>
+                      {rca?.baseline_examples?.map((ex, idx) => (
+                        <li key={idx} style={{ marginBottom: "4px" }}>{ex}</li>
+                      ))}
+                      {!rca?.baseline_examples?.length && <li>No examples</li>}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <strong style={{ display: "block", color: "var(--muted)", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
+                      Current Examples:
+                    </strong>
+                    <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: "var(--muted-strong)" }}>
+                      {rca?.telemetry_examples?.map((ex, idx) => (
+                        <li key={idx} style={{ marginBottom: "4px" }}>{ex}</li>
+                      ))}
+                      {!rca?.telemetry_examples?.length && <li>No examples</li>}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: "30px", display: "grid", gap: "24px" }}>
+                {/* Agentic Triage & Diagnosis Block */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "24px" }}>
+                  <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid var(--line-soft)", borderRadius: "4px", padding: "20px" }}>
+                    <div style={{ marginBottom: "15px" }}>
+                      <span style={{ fontSize: "0.8rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Triage Agent Status</span>
+                    </div>
+                    <div style={{ display: "grid", gap: "12px" }}>
+                      <div>
+                        <span style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)" }}>Severity Class:</span>
+                        <strong style={{ fontSize: "1rem", color: "var(--text)" }}>{agenticRca?.triage?.severity || "LOW"}</strong>
+                      </div>
+                      <div>
+                        <span style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)" }}>Requires Investigation:</span>
+                        <strong style={{
+                          fontSize: "1rem",
+                          color: agenticRca?.triage?.requires_investigation ? "var(--danger)" : "var(--success)"
+                        }}>
+                          {agenticRca?.triage?.requires_investigation ? "🔴 YES" : "🟢 NO"}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid var(--line-soft)", borderRadius: "4px", padding: "20px" }}>
+                    <div style={{ marginBottom: "15px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.8rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Diagnosis Agent Analysis</span>
+                      <span style={{ fontSize: "0.85rem", color: "var(--cyan)", fontWeight: 700 }}>
+                        Confidence: {Math.round((agenticRca?.diagnosis?.confidence || 0) * 100)}%
+                      </span>
+                    </div>
+                    {/* Confidence Progress Bar */}
+                    <div style={{ width: "100%", height: "6px", background: "var(--line-soft)", borderRadius: "3px", overflow: "hidden", marginBottom: "15px" }}>
+                      <div style={{
+                        width: `${Math.round((agenticRca?.diagnosis?.confidence || 0) * 100)}%`,
+                        height: "100%",
+                        background: "var(--cyan)",
+                        boxShadow: "0 0 8px var(--cyan)",
+                        transition: "width 0.4s ease-out"
+                      }} />
+                    </div>
+                    <div style={{ display: "grid", gap: "10px" }}>
+                      <div>
+                        <span style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)" }}>Root Cause:</span>
+                        <p style={{ fontSize: "0.95rem", color: "var(--text)", marginTop: "2px" }}>
+                          {agenticRca?.diagnosis?.root_cause || "No cause diagnosed."}
+                        </p>
+                      </div>
+                      <div>
+                        <span style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)" }}>Evidence Cited:</span>
+                        <p style={{ fontSize: "0.9rem", color: "var(--muted-strong)", marginTop: "2px" }}>
+                          {agenticRca?.diagnosis?.evidence || "No evidence cited."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recommendation Agent Actions */}
+                <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid var(--line-soft)", borderRadius: "4px", padding: "20px" }}>
+                  <div style={{ marginBottom: "15px" }}>
+                    <span style={{ fontSize: "0.8rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>Recommendation Agent Action Items</span>
+                  </div>
+                  <ul style={{ listStyleType: "none", paddingLeft: 0, margin: 0, display: "grid", gap: "10px" }}>
+                    {agenticRca?.recommendations?.map((rec, idx) => (
+                      <li key={idx} style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "10px",
+                        fontSize: "0.95rem",
+                        color: "var(--text)"
+                      }}>
+                        <span style={{ color: "var(--cyan-strong)", fontWeight: "bold" }}>👉</span>
+                        <span>{rec}</span>
+                      </li>
+                    ))}
+                    {!agenticRca?.recommendations?.length && (
+                      <li style={{ color: "var(--muted)" }}>No recommendations available.</li>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Collaboration Logs Console */}
+                <div style={{
+                  background: "var(--page-deep)",
+                  border: "1px solid var(--line-soft)",
+                  borderRadius: "4px",
+                  padding: "15px 20px",
+                  fontFamily: "monospace",
+                  fontSize: "0.85rem"
+                }}>
+                  <div style={{ borderBottom: "1px solid var(--line-soft)", paddingBottom: "8px", marginBottom: "10px", color: "var(--muted)", fontWeight: "bold", display: "flex", justifyContent: "space-between" }}>
+                    <span>💻 Agent Collaboration Trace Log</span>
+                    <span style={{ color: "var(--cyan-strong)" }}>ACTIVE RUN</span>
+                  </div>
+                  <div style={{ display: "grid", gap: "8px", color: "var(--muted-strong)" }}>
+                    {agenticRca?.agent_collaboration_log?.map((logLine, idx) => (
+                      <div key={idx} style={{ display: "flex", gap: "10px" }}>
+                        <span style={{ color: "var(--cyan)", userSelect: "none" }}>[{idx + 1}]</span>
+                        <span style={{ wordBreak: "break-all" }}>{logLine}</span>
+                      </div>
+                    ))}
+                    {!agenticRca?.agent_collaboration_log?.length && (
+                      <div style={{ color: "var(--muted)" }}>No log trace recorded.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="dashboardPanel comparisonPanel">
+            <div className="comparisonTitle">
+              <div>
+                <Table2 size={28} />
+                <h2>Active LLM Samples</h2>
+              </div>
+              <span>Side-by-Side</span>
+            </div>
+            <div className="comparisonGrid">
+              <CodePane
+                title="Baseline Response Samples"
+                muted
+                code={JSON.stringify(samples?.baseline || [], null, 2)}
+              />
+              <CodePane
+                title="Current Response Samples"
+                code={JSON.stringify(samples?.current || [], null, 2)}
+              />
+            </div>
+          </section>
+        </>
+      )}
     </div>
-
   );
 }
 
-function LlmPlaygroundPanel() {
+function LlmPlaygroundPanel({ reload }) {
   const [prompt, setPrompt] = useState("");
   const [lastResponse, setLastResponse] = useState(null);
   const [samples, setSamples] = useState(null);
@@ -597,6 +848,7 @@ function LlmPlaygroundPanel() {
       setPrompt("");
       setSuccess("Response generated and stored successfully.");
       await loadSamples();
+      if (reload) reload();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -613,6 +865,7 @@ function LlmPlaygroundPanel() {
       setSuccess(`${res.message} (Baseline size: ${res.baseline_size})`);
       setLastResponse(null);
       await loadSamples();
+      if (reload) reload();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -898,11 +1151,15 @@ function DashboardPage({
           )}
 
           {activeSection === "llm_drift" && (
-            <LlmDriftPanel activeSection={activeSection} requestNonce={requestNonce} />
+            <LlmDriftPanel
+              activeSection={activeSection}
+              requestNonce={requestNonce}
+              setActiveSection={setActiveSection}
+            />
           )}
 
           {activeSection === "llm_playground" && (
-            <LlmPlaygroundPanel />
+            <LlmPlaygroundPanel reload={reload} />
           )}
 
           {activeSection === "overview" && (

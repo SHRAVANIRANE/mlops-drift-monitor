@@ -92,7 +92,7 @@ export async function setLlmBaseline() {
 }
 
 export async function fetchLlmDrift() {
-  const response = await fetch(`${API_BASE_URL}/drift`);
+  const response = await fetch(`${API_BASE_URL}/drift`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(await readError(response));
   }
@@ -100,7 +100,7 @@ export async function fetchLlmDrift() {
 }
 
 export async function fetchLlmDriftHistory() {
-  const response = await fetch(`${API_BASE_URL}/drift/history`);
+  const response = await fetch(`${API_BASE_URL}/drift/history`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(await readError(response));
   }
@@ -108,7 +108,7 @@ export async function fetchLlmDriftHistory() {
 }
 
 export async function fetchLlmSamples() {
-  const response = await fetch(`${API_BASE_URL}/samples`);
+  const response = await fetch(`${API_BASE_URL}/samples`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(await readError(response));
   }
@@ -116,7 +116,15 @@ export async function fetchLlmSamples() {
 }
 
 export async function fetchLlmRca() {
-  const response = await fetch(`${API_BASE_URL}/drift/rca`);
+  const response = await fetch(`${API_BASE_URL}/drift/rca`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+export async function fetchLlmAgenticRca() {
+  const response = await fetch(`${API_BASE_URL}/drift/agentic-rca`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(await readError(response));
   }
