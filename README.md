@@ -285,7 +285,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 ## Screenshots / Demo
 
 ### Product Landing Page
-![Driftium Landing Page](file:///c:/Users/Shravani/Desktop/Projects/mlops-drift-monitor/docs/landing_page_placeholder.png)
+<img width="1877" height="895" alt="image" src="https://github.com/user-attachments/assets/93833360-d8da-4946-9225-8150f4ffbca8" />
 *A sleek dot-matrix dashboard landing layout demonstrating real-time health indicators and drift status.*
 
 ### LLM Observability Dashboard
