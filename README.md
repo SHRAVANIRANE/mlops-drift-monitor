@@ -345,6 +345,11 @@ ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. 
 
 ---
 
+## Author
+
+Shravani Rane
+MCA MET'27
+
 ## License
 
 Driftium is released under the [MIT License](file:///c:/Users/Shravani/Desktop/Projects/mlops-drift-monitor/LICENSE).
