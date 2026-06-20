@@ -289,11 +289,11 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 *A sleek dot-matrix dashboard landing layout demonstrating real-time health indicators and drift status.*
 
 ### LLM Observability Dashboard
-![Driftium LLM Observatory](file:///c:/Users/Shravani/Desktop/Projects/mlops-drift-monitor/docs/llm_observability_placeholder.png)
+<img width="1877" height="887" alt="image" src="https://github.com/user-attachments/assets/082527ec-0cf5-4c1c-a988-0817f2f129da" />
 *Visualizes semantic health scores, MMD metrics, active history trend lines, and the LLM-powered RCA summary.*
 
 ### Interactive Playground
-![Driftium Playground](file:///c:/Users/Shravani/Desktop/Projects/mlops-drift-monitor/docs/playground_placeholder.png)
+<img width="1876" height="886" alt="image" src="https://github.com/user-attachments/assets/18d5fa47-ee8f-4c0d-8c8b-667f8f10dfff" />
 *Allows sandbox prompt testing, response generations, and baseline promotions.*
 
 ---
