@@ -3,7 +3,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite)](https://vitejs.dev)
-[![Qdrant](https://img.shields.io/badge/Qdrant-Active-red?style=flat)](https://qdrant   .tech)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Active-red?style=flat)](https://qdrant.tech)
 [![Ollama](https://img.shields.io/badge/Ollama-smollm%3A135m-orange?style=flat)](https://ollama.com)
 [![pytest](https://img.shields.io/badge/pytest-passed-success?style=flat&logo=pytest)](https://docs.pytest.org)
 
