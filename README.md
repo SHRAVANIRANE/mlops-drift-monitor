@@ -259,10 +259,10 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 | `/api/rca` | `POST` | Generate tabular RCA explaining numerical shifts | `{"feature": "balance", "drift_rows": [...], "incoming_source_description": "..."}` | `{"available": true, "content": "...", "error": null, "model": "..."}` |
 | `/generate` | `POST` | Get LLM response completion and append to telemetry pool | `{"prompt": "text"}` | `{"id": "...", "prompt": "...", "response": "...", "timestamp": "..."}` |
 | `/baseline` | `POST` | Promote current telemetry responses to the baseline pool | None | `{"message": "Baseline set successfully", "baseline_size": 4}` |
-| `/drift` | `GET` | Calculate LLM semantic drift scores and append to history | None | `{"centroid_score": 0.22, "mmd_score": 0.05, "severity": "LOW", "timestamp": "..."}` |
-| `/drift/history` | `GET` | Retrieve last 20 drift history calculation logs | None | `[{"timestamp": "...", "centroid_score": 0.22, "mmd_score": 0.05, "severity": "LOW"}]` |
+| `/drift` | `GET` | Calculate LLM semantic drift scores and append to history | None | `{"status": "not_initialized" \| "waiting_for_baseline" \| "waiting_for_telemetry" \| "ready", "centroid_score": 0.22, "mmd_score": 0.05, "severity": "LOW", "timestamp": "...", "message": "..."}` |
+| `/drift/history` | `GET` | Retrieve last 20 drift history calculation logs | None | `{"history": [{"timestamp": "...", "centroid_score": 0.22, "mmd_score": 0.05, "severity": "LOW"}]}` |
 | `/samples` | `GET` | Fetch active baseline and current telemetry text samples | None | `{"baseline": ["..."], "current": ["..."]}` |
-| `/drift/rca` | `GET` | Compare response pools and return semantic topic shift analysis | None | `{"baseline_size": 4, "telemetry_size": 3, "severity": "CRITICAL", "summary": "...", "possible_cause": "..."}` |
+| `/drift/rca` | `GET` | Compare response pools and return semantic topic shift analysis | None | `{"available": false, "message": "Not enough data for RCA."}` or `{"available": true, "baseline_size": 4, "telemetry_size": 3, "severity": "CRITICAL", "summary": "...", "possible_cause": "..."}` |
 | `/drift/agentic-rca` | `GET` | Execute the collaborative Multi-Agent RCA workflow and return structured report | None | `{"triage": {...}, "diagnosis": {...}, "recommendations": [...], "agent_collaboration_log": [...]}` |
 
 ---
@@ -343,6 +343,7 @@ ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. 
 *   **Playground Prop Desynchronization**: Fixed a frontend bug where the prompt playground component was not properly bound to the parent refresh context. Corrected the signature to accept and trigger the `reload` prop on successful generation/promotion, ensuring drift metrics refresh instantly on tab switch.
 *   **Sub-App Route Conflicts**: Solved routing blockages by arranging endpoints such that specific static routes take precedence, while mounting the sub-app as a root-level fallback.
 *   **Severity-Aware Recommendations & Formatting**: Fixed a bug where recommendation action items were uniform across low/medium/high/critical severities and UI displayed raw dictionaries. Developed a severity-tiered routing prompt for the Recommendation Agent, sanitizers to filter out raw dictionaries from the response, and standard severity-specific fallback lists.
+*   **Standardized Empty States & Unified Status Enum**: Resolved a startup issue where opening the dashboard on a fresh installation triggered red "Failed to fetch" error banners due to empty baseline/telemetry response lists. Standardized all LLM monitoring endpoints to return a unified status enum (`not_initialized`, `waiting_for_baseline`, `waiting_for_telemetry`, `ready`) as valid JSON payloads rather than throwing exceptions or returning unhandled formats. Integrated clean, informative cyan banners in the React frontend to welcome users and guide onboarding during empty states.
 *   **Concurrent Database Locks in Local Qdrant Storage**: Addressed parallel test-suite and reload conflicts by shifting `init_collection` to FastAPI lifespans and implementing a robust environment detection check (`is_testing`) that avoids false-positive folder locks on `qdrant_test_db` caused by implicit standard-library imports of `unittest` in the backend uvicorn process.
 
 ### Scalability Considerations
