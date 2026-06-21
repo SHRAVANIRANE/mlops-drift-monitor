@@ -2,7 +2,7 @@
 
 [![React](https://img.shields.io/badge/Frontend-React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://react.dev) [![Vite](https://img.shields.io/badge/Build-Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev) [![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-EF4444?style=flat)](https://qdrant.tech) [![Ollama](https://img.shields.io/badge/Local%20LLM-smollm%3A135m-F97316?style=flat)](https://ollama.com) [![pytest](https://img.shields.io/badge/Tests-16%20Passing-success?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org)
 
-Driftium is an open-source, recruiter-friendly MLOps telemetry console and LLM observability platform. It is designed to trace statistical feature drift in tabular data pipelines and semantic distribution shifts in Large Language Model (LLM) responses. By analyzing incoming production telemetry against reference baselines, Driftium translates abstract distribution deltas and topic shifts into developer-friendly, LLM-generated Root Cause Analysis (RCA) summaries.
+Driftium is an open-source MLOps telemetry console and LLM observability platform. It is designed to trace statistical feature drift in tabular data pipelines and semantic distribution shifts in Large Language Model (LLM) responses. By analyzing incoming production telemetry against reference baselines, Driftium translates abstract distribution deltas and topic shifts into developer-friendly, LLM-generated Root Cause Analysis (RCA) summaries.
 
 ---
 
@@ -310,7 +310,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 ---
 
-## Resume Highlights
+## Highlights
 *   **Built an End-to-End MLOps Drift Monitor & LLM Observability Platform** utilizing FastAPI, React (Vite), Sentence Transformers, and Qdrant to detect tabular and semantic drift in real-time.
 *   **Designed a Collaborative Multi-Agent AI System** incorporating Triage, Diagnosis, and Recommendation agents orchestrated sequentially to automatically troubleshoot and explain semantic drift.
 *   **Engineered Statistical Analysis Engines** in Python using SciPy to perform Kolmogorov-Smirnov (KS) and Chi-square contingency tests, flagging feature deviations in incoming dataset telemetry.
@@ -321,7 +321,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 ---
 
-## Interview Talking Points
+## Overview
 
 ### Why the Project Was Built
 ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. Datadog) monitor system status like CPU or latency, but cannot spot mathematical data drift or semantic topic shifts. Driftium was built to bridge this gap, giving AI engineers a unified visual dashboard that alerts on distribution shifts and provides prompt explanations of *why* the data shifted.
@@ -350,7 +350,6 @@ ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. 
 ## Author
 
 Shravani Rane
-MCA MET'27
 
 ## License
 
