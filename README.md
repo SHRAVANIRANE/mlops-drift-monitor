@@ -38,6 +38,7 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
     *   **Maximum Mean Discrepancy (MMD)**: Kernel-based MMD scoring using Radial Basis Functions (RBF) to measure distribution-level semantic shifts.
     *   **Stability Trend Line**: Graph tracing the historical health index and MMD scores over the last 20 calculations.
     *   **Response Comparer**: Side-by-side view of active baseline responses vs. current telemetry responses.
+    *   **Light/Dark Theme Toggle**: Accessible sun/moon toggle in the navigation header that switches seamlessly between the default dark cyberpunk theme and a clean, light-mode enterprise SaaS dashboard, persisted in `localStorage`.
 *   **Interactive Prompt Playground**:
     *   **Direct Generation**: Send custom prompt instructions to local Ollama (`smollm:135m`) and view responses instantly.
     *   **Baseline Promotion**: Promote current telemetry response lists to the baseline pool with a single click (`POST /baseline`).
@@ -143,7 +144,7 @@ mlops-drift-monitor/
 │   │   ├── App.jsx               # Dashboard application, layout grids, and sections
 │   │   ├── api.js                # API client integration communicating with FastAPI
 │   │   ├── main.jsx              # React app entry point
-│   │   └── styles.css            # Dark theme styles, layouts, and animations
+│   │   └── styles.css            # Theme-aware styles (supporting Light/Dark modes), layouts, and animations
 │   ├── package.json              # Frontend node packages & run scripts
 │   └── vite.config.js            # Vite configurations
 ├── src/                          # Backend source code modules
@@ -317,6 +318,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 ## Resume Highlights
 *   **Built an End-to-End MLOps Drift Monitor & LLM Observability Platform** utilizing FastAPI, React (Vite), Sentence Transformers, and Qdrant to detect tabular and semantic drift in real-time.
+*   **Designed a Theme-Aware Dashboard Interface** featuring a fully accessible Light/Dark theme toggle with localStorage persistence and smooth transition animations.
 *   **Designed a Collaborative Multi-Agent AI System** incorporating Triage, Diagnosis, and Recommendation agents orchestrated sequentially to automatically troubleshoot and explain semantic drift.
 *   **Engineered Statistical Analysis Engines** in Python using SciPy to perform Kolmogorov-Smirnov (KS) and Chi-square contingency tests, flagging feature deviations in incoming dataset telemetry.
 *   **Implemented High-Dimensional LLM Observability** by computing centroid cosine distance and Maximum Mean Discrepancy (MMD) scores over 384-dimensional response embeddings.
@@ -339,6 +341,7 @@ ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. 
 *   **Rule-Based Exception Handling**: LLM services hosted locally can be volatile. The RCA module detects Ollama timeouts or failure codes and gracefully falls back to deterministic rule-based analysis, ensuring high system uptime.
 
 ### Challenges Solved
+*   **Accessible Light/Dark Theme Integration**: Integrated a clean, theme-aware CSS custom properties layout system that preserves the dark theme pixel-identically while supporting a premium light-theme SaaS layout. Addressed accessibility constraints with visible focus states and screen-reader compliant aria-labels.
 *   **Stale Dashboard Telemetry Trends & SQLite Persistence**: Resolved a bug where the `/drift` evaluation endpoint generated metrics but failed to store them. Implemented a persistent SQLite database storage mechanism (`drift_history.db`) in the backend to record and load scores across server restarts, resolving the flat dashboard trend line and maintaining historical data.
 *   **Playground Prop Desynchronization**: Fixed a frontend bug where the prompt playground component was not properly bound to the parent refresh context. Corrected the signature to accept and trigger the `reload` prop on successful generation/promotion, ensuring drift metrics refresh instantly on tab switch.
 *   **Sub-App Route Conflicts**: Solved routing blockages by arranging endpoints such that specific static routes take precedence, while mounting the sub-app as a root-level fallback.
