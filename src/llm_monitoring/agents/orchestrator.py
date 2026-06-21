@@ -13,7 +13,7 @@ def run_agentic_rca(baseline_responses: list[str], telemetry_responses: list[str
     diagnosis_res = run_diagnosis_agent(baseline_responses, telemetry_responses, drift_metrics)
 
     # 3. Recommendation Agent
-    recommendation_res = run_recommendation_agent(diagnosis_res)
+    recommendation_res = run_recommendation_agent(diagnosis_res, severity=triage_res.get("severity", "LOW"))
 
     # Build collaboration log trace
     collaboration_log = [

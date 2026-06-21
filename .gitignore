@@ -33,3 +33,17 @@ frontend/dist/
 .ipynb_checkpoints/
 
 Driftium.pdf
+
+# Qdrant runtime data
+qdrant_db/
+qdrant_test_db/
+
+# SQLite databases
+*.db
+*.sqlite
+
+# Qdrant lock files
+.lock*
+
+# Metadata
+meta.json

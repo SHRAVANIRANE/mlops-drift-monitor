@@ -122,7 +122,8 @@ def run_simulation():
     baseline_embeddings = embed_texts(baseline_responses)
     drift_embeddings = embed_texts(drift_responses)
 
-    init_collection(vector_size=baseline_embeddings.shape[1])
+    # Simulator runs intentionally start from a clean vector store to avoid interference
+    init_collection(vector_size=baseline_embeddings.shape[1], reset=True)
 
     # 🔥 STORE in Qdrant
     store_embeddings(baseline_embeddings, "baseline")

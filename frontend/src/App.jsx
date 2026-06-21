@@ -226,7 +226,7 @@ function TopNav({ onDashboard, onLanding, activeItem = "Models" }) {
 function SpinnerLabel({ label }) {
   return (
     <span className="spinnerLabel">
-      <Loader2 size={16} />
+      <Loader2 size={16} className="spinner" />
       {label}
     </span>
   );
@@ -245,9 +245,9 @@ function LandingPage({ onEnterDashboard }) {
               Real-time LLM observability
             </span>
             <h1>
-               <span className="gradientText">Driftium</span>
+              <span className="gradientText">Driftium</span>
             </h1>
-      
+
 
             <p>
               Driftium tracks semantic drift, output variance, and model decay in real-time. Turn
@@ -392,7 +392,7 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
           fetchLlmAgenticRca()
         ]);
         setDrift(driftRes);
-        setHistory(historyRes);
+        setHistory(historyRes?.history ?? (Array.isArray(historyRes) ? historyRes : []));
         setSamples(samplesRes);
         setRca(rcaRes);
         setAgenticRca(agenticRcaRes);
@@ -408,22 +408,23 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
   if (loading) {
     return (
       <div className="apiNotice live">
-        <Loader2 size={18} />
+        <Loader2 size={18} className="spinner" />
         Loading LLM observability data...
       </div>
     );
   }
 
-  const errorMsg = error || drift?.error;
-  const isBaselineEmpty = errorMsg && errorMsg.includes("Baseline response pool is empty");
-  const isCurrentEmpty = errorMsg && (errorMsg.includes("No current telemetry responses collected") || errorMsg.includes("Need both baseline"));
+  const isNotInitialized = drift?.status === "not_initialized";
+  const isBaselineEmpty = drift?.status === "waiting_for_baseline" || isNotInitialized;
+  const isCurrentEmpty = drift?.status === "waiting_for_telemetry";
 
-  if (errorMsg && !isBaselineEmpty && !isCurrentEmpty) {
+  if (error) {
+    const displayError = error === "Failed to fetch" ? "Cannot connect to monitoring API." : error;
     return (
       <div className="dashboardStack">
         <div className="apiNotice">
           <AlertTriangle size={18} />
-          {`Failed to load LLM monitoring data: ${errorMsg}`}
+          {`Failed to load LLM monitoring data: ${displayError}`}
         </div>
       </div>
     );
@@ -438,11 +439,20 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
 
   return (
     <div className="dashboardStack">
-      {isBaselineEmpty && (
-        <div className="apiNotice">
-          <AlertTriangle size={18} />
+      {isNotInitialized && (
+        <div className="apiNotice live">
+          <Activity size={18} />
           <span>
-            <strong>No baseline set.</strong> Please run the simulator or establish a baseline via CLI/API first.
+            <strong>LLM Monitoring Ready.</strong> No baseline established yet. Generate responses and set a baseline.
+          </span>
+        </div>
+      )}
+
+      {drift?.status === "waiting_for_baseline" && (
+        <div className="apiNotice live">
+          <Activity size={18} />
+          <span>
+            <strong>Waiting for baseline creation.</strong>
           </span>
         </div>
       )}
@@ -451,7 +461,7 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
         <div className="apiNotice live">
           <Activity size={18} />
           <span>
-            <strong>Baseline established ({samples?.baseline?.length ?? 0} responses).</strong> Waiting for current session telemetry responses.
+            <strong>Waiting for comparison samples.</strong>
           </span>
         </div>
       )}
@@ -691,7 +701,7 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
                           fontSize: "1rem",
                           color: agenticRca?.triage?.requires_investigation ? "var(--danger)" : "var(--success)"
                         }}>
-                          {agenticRca?.triage?.requires_investigation ? "🔴 YES" : "🟢 NO"}
+                          {agenticRca?.triage?.requires_investigation ? "YES" : "NO"}
                         </strong>
                       </div>
                     </div>
@@ -745,8 +755,8 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
                         fontSize: "0.95rem",
                         color: "var(--text)"
                       }}>
-                        <span style={{ color: "var(--cyan-strong)", fontWeight: "bold" }}>👉</span>
-                        <span>{rec}</span>
+                        <span style={{ color: "var(--cyan-strong)", fontWeight: "bold" }}>‣</span>
+                        <span>{typeof rec === 'object' && rec !== null ? (rec.action || rec.recommendation || rec.text || JSON.stringify(rec)) : String(rec)}</span>
                       </li>
                     ))}
                     {!agenticRca?.recommendations?.length && (
@@ -765,7 +775,7 @@ function LlmDriftPanel({ activeSection, requestNonce, setActiveSection }) {
                   fontSize: "0.85rem"
                 }}>
                   <div style={{ borderBottom: "1px solid var(--line-soft)", paddingBottom: "8px", marginBottom: "10px", color: "var(--muted)", fontWeight: "bold", display: "flex", justifyContent: "space-between" }}>
-                    <span>💻 Agent Collaboration Trace Log</span>
+                    <span>Agent Collaboration Trace Log</span>
                     <span style={{ color: "var(--cyan-strong)" }}>ACTIVE RUN</span>
                   </div>
                   <div style={{ display: "grid", gap: "8px", color: "var(--muted-strong)" }}>
@@ -900,7 +910,7 @@ function LlmPlaygroundPanel({ reload }) {
               <button className="cyanButton compact" type="submit" disabled={generating || !prompt.trim()}>
                 {generating ? (
                   <span className="spinnerLabel">
-                    <Loader2 size={16} />
+                    <Loader2 size={16} className="spinner" />
                   </span>
                 ) : (
                   <Zap size={16} />
@@ -950,7 +960,7 @@ function LlmPlaygroundPanel({ reload }) {
             >
               {baselineSetting ? (
                 <span className="spinnerLabel">
-                  <Loader2 size={16} />
+                  <Loader2 size={16} className="spinner" />
                 </span>
               ) : (
                 <Database size={16} />
@@ -971,7 +981,7 @@ function LlmPlaygroundPanel({ reload }) {
         </div>
         {loading ? (
           <div className="apiNotice live" style={{ margin: "20px" }}>
-            <Loader2 size={18} />
+            <Loader2 size={18} className="spinner" />
             Loading active pools...
           </div>
         ) : (
@@ -1099,7 +1109,7 @@ function DashboardPage({
 
           <div className="sidebarFooter">
             <button className="newAnalysisButton" type="button" onClick={reload} disabled={loading}>
-              {loading ? <Loader2 size={24} /> : <Plus size={26} />}
+              {loading ? <Loader2 size={24} className="spinner" /> : <Plus size={26} />}
               New Analysis
             </button>
             <button className="supportLink" type="button">
@@ -1135,13 +1145,13 @@ function DashboardPage({
           {error && (
             <div className="apiNotice">
               <AlertTriangle size={18} />
-              Could not load monitoring data: {error}
+              Could not load monitoring data: {error === "Failed to fetch" ? "Cannot connect to monitoring API." : error}
             </div>
           )}
 
           {loading && !error && (
             <div className="apiNotice live">
-              <Loader2 size={18} />
+              <Loader2 size={18} className="spinner" />
               Refreshing production telemetry
             </div>
           )}
@@ -1823,7 +1833,7 @@ export default function App() {
   const [uploadFile, setUploadFile] = useState(null);
   const [requestNonce, setRequestNonce] = useState(0);
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -1848,15 +1858,15 @@ export default function App() {
         const payload =
           mode === "upload"
             ? await uploadMonitoringBatch({
-                file: uploadFile,
-                pThreshold,
-                signal: controller.signal,
-              })
+              file: uploadFile,
+              pThreshold,
+              signal: controller.signal,
+            })
             : await fetchSimulatedMonitoring({
-                ageThreshold,
-                pThreshold,
-                signal: controller.signal,
-              });
+              ageThreshold,
+              pThreshold,
+              signal: controller.signal,
+            });
 
         setData(payload);
       } catch (requestError) {

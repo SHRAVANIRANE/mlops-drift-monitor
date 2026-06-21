@@ -37,6 +37,7 @@ body {
   color: var(--text);
   background: var(--page);
 }
+
 body::after {
   content: "";
   position: fixed;
@@ -46,6 +47,7 @@ body::after {
   opacity: 0.2;
   pointer-events: none;
 }
+
 button,
 input,
 select,
@@ -165,9 +167,10 @@ p {
   border: 1px solid var(--cyan-strong);
   background: var(--cyan);
   box-shadow:
-      0 8px 24px rgba(17, 216, 232, 0.16),
-      0 0 40px rgba(0, 240, 255, 0.25);
+    0 8px 24px rgba(17, 216, 232, 0.16),
+    0 0 40px rgba(0, 240, 255, 0.25);
 }
+
 .cyanButton:hover {
   transform: translateY(-2px);
   box-shadow:
@@ -206,15 +209,14 @@ p {
   place-items: center;
   padding: 120px 24px 150px;
 }
+
 .marketingHero::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at 50% 30%,
-    rgba(17, 216, 232, 0.15),
-    transparent 60%
-  );
+  background: radial-gradient(circle at 50% 30%,
+      rgba(17, 216, 232, 0.15),
+      transparent 60%);
   pointer-events: none;
 }
 
@@ -258,6 +260,7 @@ p {
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
 }
+
 @keyframes gradientMove {
   to {
     background-position: 200% center;
@@ -295,9 +298,9 @@ p {
   backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.35),
-      0 0 40px rgba(17, 216, 232, 0.06);
-      transition: all 0.3s ease;
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    0 0 40px rgba(17, 216, 232, 0.06);
+  transition: all 0.3s ease;
 }
 
 .featureCard:hover {
@@ -346,9 +349,9 @@ p {
   place-items: center;
   overflow: hidden;
   background:
-      radial-gradient(circle at center, rgba(17, 216, 232, 0.25), transparent 40%),
-      linear-gradient(90deg, rgba(6, 15, 24, 0.3), rgba(17, 216, 232, 0.05));
-    }
+    radial-gradient(circle at center, rgba(17, 216, 232, 0.25), transparent 40%),
+    linear-gradient(90deg, rgba(6, 15, 24, 0.3), rgba(17, 216, 232, 0.05));
+}
 
 .vectorCube::before,
 .vectorCube::after {
@@ -454,7 +457,7 @@ p {
   line-height: 1;
 }
 
-.anomalyCard > span {
+.anomalyCard>span {
   color: var(--danger-strong);
   font-size: 0.78rem;
   font-weight: 900;
@@ -681,7 +684,7 @@ p {
 }
 
 .newAnalysisButton svg:not(.lucide-loader-2),
-.apiNotice svg:not(.lucide-loader-2) {
+.apiNotice svg:not(.spinner) {
   animation: none;
 }
 
@@ -767,17 +770,17 @@ p {
   padding: 30px 30px 0;
 }
 
-.panelHeader > span,
+.panelHeader>span,
 .comparisonTitle span,
-.promptHeader > div > span,
-.analysisHero > div > span {
+.promptHeader>div>span,
+.analysisHero>div>span {
   color: var(--muted-strong);
   text-transform: uppercase;
   font-size: 0.96rem;
   font-weight: 900;
 }
 
-.panelHeader > strong {
+.panelHeader>strong {
   color: var(--muted-strong);
   font-size: 0.9rem;
 }
@@ -927,8 +930,8 @@ p {
   font-size: 2rem;
 }
 
-.comparisonTitle > span,
-.promptHeader > strong {
+.comparisonTitle>span,
+.promptHeader>strong {
   display: inline-flex;
   min-height: 32px;
   align-items: center;
@@ -949,7 +952,7 @@ p {
   padding: 30px;
 }
 
-.codePane + .codePane {
+.codePane+.codePane {
   border-left: 1px solid var(--line-soft);
 }
 
@@ -1044,7 +1047,7 @@ p {
   padding-top: 24px;
 }
 
-.promptActions > span {
+.promptActions>span {
   margin-right: auto;
   color: var(--muted-strong);
   line-height: 1.5;
@@ -1118,7 +1121,7 @@ p {
   overflow: hidden;
 }
 
-.analysisHero > div:first-child {
+.analysisHero>div:first-child {
   padding: 40px;
 }
 
@@ -1160,25 +1163,25 @@ p {
   text-align: left;
 }
 
-button.signalRow:hover > span,
-button.signalRow:focus-visible > span {
+button.signalRow:hover>span,
+button.signalRow:focus-visible>span {
   color: var(--text);
 }
 
-.signalRow > span {
+.signalRow>span {
   overflow: hidden;
   color: var(--muted-strong);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.signalRow > div {
+.signalRow>div {
   height: 10px;
   overflow: hidden;
   background: #0b1520;
 }
 
-.signalRow > div span {
+.signalRow>div span {
   display: block;
   height: 100%;
   background: var(--cyan);
@@ -1320,7 +1323,7 @@ dd {
   background: #101a25;
 }
 
-.controlCard > span,
+.controlCard>span,
 .uploadControl span {
   color: var(--muted-strong);
   text-transform: uppercase;
@@ -1389,6 +1392,7 @@ dd {
 }
 
 @media (max-width: 1180px) {
+
   .featureMosaic,
   .topMetrics,
   .analysisGrid,
@@ -1465,7 +1469,7 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .codePane + .codePane {
+  .codePane+.codePane {
     border-top: 1px solid var(--line-soft);
     border-left: 0;
   }
@@ -1509,7 +1513,7 @@ dd {
   .codePane,
   .promptPanel,
   .settingsPanel,
-  .analysisHero > div:first-child {
+  .analysisHero>div:first-child {
     padding: 22px;
   }
 
@@ -1571,7 +1575,7 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .promptActions > span {
+  .promptActions>span {
     margin-right: 0;
   }
 
@@ -1714,3 +1718,17 @@ dd {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}

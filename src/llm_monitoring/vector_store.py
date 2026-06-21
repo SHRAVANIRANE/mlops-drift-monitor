@@ -1,22 +1,60 @@
 import uuid
+import logging
+from pathlib import Path
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue
 from qdrant_client.models import PointStruct, VectorParams
 
+logger = logging.getLogger("llm_monitoring")
+
 COLLECTION_NAME = "llm_embeddings"
 
-client = QdrantClient(":memory:")  # local in-memory (easy start)
+import os
+import sys
+
+# Use a separate database path during testing to prevent polluting production data
+is_testing = (
+    "pytest" in sys.modules
+    or "PYTEST_CURRENT_TEST" in os.environ
+    or any("pytest" in arg or "unittest" in arg for arg in sys.argv)
+)
+
+if is_testing:
+    QDRANT_DIR = Path(__file__).resolve().parents[2] / "qdrant_test_db"
+else:
+    QDRANT_DIR = Path(__file__).resolve().parents[2] / "qdrant_db"
+
+QDRANT_DIR.mkdir(parents=True, exist_ok=True)
+
+_client = None
 
 
-def init_collection(vector_size: int = 384):
-    if client.collection_exists(COLLECTION_NAME):
-        client.delete_collection(COLLECTION_NAME)
+def get_client() -> QdrantClient:
+    global _client
+    if _client is None:
+        _client = QdrantClient(path=str(QDRANT_DIR))
+    return _client
 
-    client.create_collection(
-        collection_name=COLLECTION_NAME,
-        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
-    )
+
+def init_collection(vector_size: int = 384, reset: bool = False):
+    c = get_client()
+    if c.collection_exists(COLLECTION_NAME):
+        if reset:
+            c.delete_collection(COLLECTION_NAME)
+            c.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+            )
+            logger.info(f"Deleted and recreated Qdrant collection '{COLLECTION_NAME}' with vector size {vector_size}.")
+        else:
+            logger.info(f"Qdrant collection '{COLLECTION_NAME}' already exists. Reusing existing collection.")
+    else:
+        c.create_collection(
+            collection_name=COLLECTION_NAME,
+            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+        )
+        logger.info(f"Created new Qdrant collection '{COLLECTION_NAME}' with vector size {vector_size}.")
 
 
 def store_embeddings(embeddings, label: str):
@@ -32,14 +70,14 @@ def store_embeddings(embeddings, label: str):
             )
         )
 
-    client.upsert(
+    get_client().upsert(
         collection_name=COLLECTION_NAME,
         points=points
     )
 
 
 def get_embeddings(label: str):
-    results = client.scroll(
+    results = get_client().scroll(
         collection_name=COLLECTION_NAME,
         scroll_filter=Filter(
             must=[

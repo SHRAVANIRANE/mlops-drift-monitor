@@ -96,8 +96,10 @@ def test_recommendation_agent_fallback(monkeypatch):
     monkeypatch.setattr(recommendation_agent.ollama, "chat", mock_chat)
 
     res = recommendation_agent.run_recommendation_agent({"root_cause": "ML shift", "confidence": 0.8})
-    assert len(res["recommendations"]) == 2
-    assert "Establish a new baseline" in res["recommendations"][1]
+    assert len(res["recommendations"]) == 3
+    assert "No immediate action required" in res["recommendations"][0]
+    assert "Continue monitoring semantic stability" in res["recommendations"][1]
+    assert "Current responses remain aligned" in res["recommendations"][2]
 
 
 # --- orchestrator tests ---
@@ -128,3 +130,47 @@ def test_orchestrator_integration(monkeypatch):
     assert len(report["recommendations"]) == 2
     assert len(report["agent_collaboration_log"]) == 3
     assert report["metadata"]["centroid_score"] == 0.3
+
+
+def test_recommendation_agent_severity_awareness(monkeypatch):
+    # Ensure Ollama falls back so we test the custom severity fallbacks directly
+    def mock_chat(*args, **kwargs):
+        raise RuntimeError("Service offline")
+    monkeypatch.setattr(recommendation_agent.ollama, "chat", mock_chat)
+
+    diag = {"root_cause": "Semantic drift", "confidence": 0.8}
+
+    res_low = recommendation_agent.run_recommendation_agent(diag, severity="LOW")
+    res_med = recommendation_agent.run_recommendation_agent(diag, severity="MEDIUM")
+    res_high = recommendation_agent.run_recommendation_agent(diag, severity="HIGH")
+    res_crit = recommendation_agent.run_recommendation_agent(diag, severity="CRITICAL")
+
+    # Assert they are all distinct recommendation sets
+    assert res_low != res_med
+    assert res_low != res_high
+    assert res_low != res_crit
+    assert res_med != res_high
+    assert res_med != res_crit
+    assert res_high != res_crit
+
+    # Verify length and specific text markers match requirements
+    assert len(res_low["recommendations"]) == 3
+    assert len(res_med["recommendations"]) == 3
+    assert len(res_high["recommendations"]) == 3
+    assert len(res_crit["recommendations"]) == 3
+
+    assert "No immediate action required" in res_low["recommendations"][0]
+    assert "Continue monitoring semantic stability" in res_low["recommendations"][1]
+    assert "Current responses remain aligned" in res_low["recommendations"][2]
+
+    assert "Review recent prompt trends" in res_med["recommendations"][0]
+    assert "Monitor for continued drift growth" in res_med["recommendations"][1]
+    assert "Consider re-baselining" in res_med["recommendations"][2]
+
+    assert "Investigate prompt distribution changes" in res_high["recommendations"][0]
+    assert "Review model/version changes" in res_high["recommendations"][1]
+    assert "Review upstream data source changes" in res_high["recommendations"][2]
+
+    assert "Immediate investigation required" in res_crit["recommendations"][0]
+    assert "Audit prompts, model configuration, and upstream systems" in res_crit["recommendations"][1]
+    assert "Escalate to operators" in res_crit["recommendations"][2]
