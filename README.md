@@ -1,11 +1,16 @@
 # Driftium - MLOps Drift Monitor & LLM Observability Platform
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite)](https://vitejs.dev)
-[![Qdrant](https://img.shields.io/badge/Qdrant-Active-red?style=flat)](https://qdrant.tech)
-[![Ollama](https://img.shields.io/badge/Ollama-smollm%3A135m-orange?style=flat)](https://ollama.com)
-[![pytest](https://img.shields.io/badge/pytest-passed-success?style=flat&logo=pytest)](https://docs.pytest.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://react.dev)
+
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev)
+
+[![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20Database-EF4444?style=flat)](https://qdrant.tech)
+
+[![Ollama](https://img.shields.io/badge/Ollama-smollm%3A135m-F97316?style=flat)](https://ollama.com)
+
+[![pytest](https://img.shields.io/badge/pytest-All%20Tests%20Passing-success?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org)
 
 Driftium is an open-source, recruiter-friendly MLOps telemetry console and LLM observability platform. It is designed to trace statistical feature drift in tabular data pipelines and semantic distribution shifts in Large Language Model (LLM) responses. By analyzing incoming production telemetry against reference baselines, Driftium translates abstract distribution deltas and topic shifts into developer-friendly, LLM-generated Root Cause Analysis (RCA) summaries.
 
