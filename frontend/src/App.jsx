@@ -17,6 +17,8 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Sun,
+  Moon,
   Table2,
   Upload,
   Zap,
@@ -193,7 +195,7 @@ function formatMetricValue(value) {
   return String(value);
 }
 
-function TopNav({ onDashboard, onLanding, activeItem = "Models" }) {
+function TopNav({ onDashboard, onLanding, activeItem = "Models", theme, toggleTheme }) {
   return (
     <header className="topNav">
       <button className="brandButton" type="button" onClick={onLanding}>
@@ -212,6 +214,14 @@ function TopNav({ onDashboard, onLanding, activeItem = "Models" }) {
         ))}
       </nav>
       <div className="navActions">
+        <button
+          className="themeToggle"
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+        >
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <button className="signinButton" type="button">
           Sign In
         </button>
@@ -232,10 +242,10 @@ function SpinnerLabel({ label }) {
   );
 }
 
-function LandingPage({ onEnterDashboard }) {
+function LandingPage({ onEnterDashboard, theme, toggleTheme }) {
   return (
     <div className="marketingPage">
-      <TopNav onDashboard={onEnterDashboard} onLanding={() => window.scrollTo(0, 0)} />
+      <TopNav onDashboard={onEnterDashboard} onLanding={() => window.scrollTo(0, 0)} theme={theme} toggleTheme={toggleTheme} />
 
       <main>
         <section className="marketingHero dotMatrix">
@@ -1020,6 +1030,8 @@ function DashboardPage({
   requestNonce,
   onLanding,
   onDashboard,
+  theme,
+  toggleTheme,
 }) {
   const rows = getRows(data);
   const summary = data?.summary ?? EMPTY_SUMMARY;
@@ -1048,7 +1060,7 @@ function DashboardPage({
 
   return (
     <div className="dashboardPage">
-      <TopNav onLanding={onLanding} onDashboard={onDashboard} activeItem="Models" />
+      <TopNav onLanding={onLanding} onDashboard={onDashboard} activeItem="Models" theme={theme} toggleTheme={toggleTheme} />
 
       <div className="dashboardShell">
         <aside className="dashboardSidebar">
@@ -1825,6 +1837,19 @@ function SettingsPanel({
 }
 
 export default function App() {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("driftium-theme") || "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("driftium-theme", theme);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
+  }
+
   const [screen, setScreen] = useState("landing");
   const [activeSection, setActiveSection] = useState("llm_drift");
   const [mode, setMode] = useState("simulated");
@@ -1892,7 +1917,7 @@ export default function App() {
   }
 
   if (screen === "landing") {
-    return <LandingPage onEnterDashboard={enterDashboard} />;
+    return <LandingPage onEnterDashboard={enterDashboard} theme={theme} toggleTheme={toggleTheme} />;
   }
 
   return (
@@ -1914,6 +1939,8 @@ export default function App() {
       requestNonce={requestNonce}
       onLanding={() => setScreen("landing")}
       onDashboard={enterDashboard}
+      theme={theme}
+      toggleTheme={toggleTheme}
     />
   );
 }
