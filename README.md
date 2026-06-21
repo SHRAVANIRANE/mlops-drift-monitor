@@ -3,7 +3,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite)](https://vitejs.dev)
-[![Qdrant](https://img.shields.io/badge/Qdrant-Active-red?style=flat)](https://qdrant.tech)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Active-red?style=flat)](https://qdrant   .tech)
 [![Ollama](https://img.shields.io/badge/Ollama-smollm%3A135m-orange?style=flat)](https://ollama.com)
 [![pytest](https://img.shields.io/badge/pytest-passed-success?style=flat&logo=pytest)](https://docs.pytest.org)
 
@@ -44,11 +44,15 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
     *   **Auto-Sync**: Automatically refreshes the main dashboard telemetry state when a baseline is promoted or new responses are generated.
 *   **Agentic AI Root Cause Analysis (RCA)**:
     *   **Collaborative Multi-Agent Flow**: Sequentially routes drift telemetry through specialized agents (**Triage Agent**, **Diagnosis Agent**, and **Recommendation Agent**) via an **Orchestrator** to compile a final structured RCA report.
+    *   **Severity-Aware Action Items**: Automatically formulates concrete next actions matching the exact drift severity level (LOW, MEDIUM, HIGH, CRITICAL) to prevent generic recommendations on stable baselines.
     *   **Developer Trace Console**: Displays a retro, terminal-style step-by-step developer log of agent communication and reasoning directly in the UI.
-    *   **Offline Fallbacks**: Graceful rule-based fallbacks default to statistical summaries if the Ollama daemon is offline or returns an invalid structure.
+    *   **Formatting Sanitization & Offline Fallbacks**: Filters out raw JSON/dictionaries from model outputs to present clean, readable lists of actions in the UI, and falls back to pre-defined structured recommendation items if Ollama is unreachable.
 *   **Persistent SQLite Storage**:
     *   **Drift History Persistence**: Automatically persists calculated drift metrics to a local SQLite database (`drift_history.db`).
     *   **Auto-Recovery & Maintenance**: Automatically initializes tables on start and limits table size to the latest 1000 records. Timestamps are stored in UTC ISO format.
+*   **Persistent Qdrant Local Vector Store**:
+    *   **Baseline Vector Persistence**: Persists baseline response embeddings to disk under `qdrant_db/`, allowing reuse across server restarts.
+    *   **Robust Environment Isolation**: Automatically detects testing states (`pytest` runs or `PYTEST_CURRENT_TEST` env vars) to route test data to an isolated `qdrant_test_db/` folder, avoiding false positives from implicit standard library imports and allowing dev servers to run concurrently without file lock conflicts.
 *   **Tabular Data Drift Monitoring**:
     *   **Kolmogorov-Smirnov (KS) Test**: Compares continuous/numeric fields to detect distribution variances.
     *   **Chi-Square & Cramer's V**: Evaluates categorical fields and ranks them by effect size.
@@ -76,7 +80,7 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
 *   **Data Processing**: Pandas, NumPy, SciPy (for Kolmogorov-Smirnov and Chi-square statistics)
 
 ### Database
-*   **Vector Database**: Qdrant (Client running in local `:memory:` mode for prompt-response embedding comparisons)
+*   **Vector Database**: Qdrant (Client running in persistent local directory mode at `qdrant_db/` or `qdrant_test_db/` for isolated unit tests)
 *   **Relational Database**: SQLite for persistent historical drift logs (`drift_history.db`)
 *   **Data Storage**: In-memory telemetry queues and persistent historical trend records
 
@@ -87,7 +91,7 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
 
 ### Infrastructure
 *   **CI & Automation**: GitHub Actions workflow (automating linting, formatting, and unit tests)
-*   **Testing**: Pytest framework (automated suite running 27 validation checks covering agents, DB persistence, and scorers)
+*   **Testing**: Pytest framework (automated suite running 28 validation checks covering agents, DB persistence, scorers, and vector storage)
 
 ---
 
@@ -96,7 +100,7 @@ Driftium features a single-server backend built with FastAPI that exposes two mo
 ### Data Flow
 1.  **Ingestion**: The user either loads a simulated demographic dataset, uploads a custom CSV, or executes prompts in the Playground.
 2.  **Vectorization**: For LLM telemetry, the backend passes generated texts to the Sentence Transformer model to compute 384-dimensional vector embeddings.
-3.  **Indexing**: Embeddings are stored in the Qdrant in-memory vector database, grouped by baseline and current telemetry pools.
+3.  **Indexing**: Embeddings are stored in separate baseline and current collections in the persistent Qdrant vector database.
 4.  **Metric Computation**: The backend runs the Centroid Cosine Distance and MMD tests on the vector distributions.
 5.  **RCA Generation**: If drift is present, the backend sends sample outputs to Ollama to summarize the semantic shift, falling back to a rule-based generator if Ollama is unreachable.
 6.  **Visualization**: The React UI polls/fetches these endpoints and updates metrics, historical trends, and text cards dynamically.
@@ -155,7 +159,7 @@ mlops-drift-monitor/
 │   │   ├── llm_drift_scorer.py   # Centroid distance and MMD calculation
 │   │   ├── simulator.py          # Standalone simulation testing logic
 │   │   ├── inference_server.py   # Dedicated LLM completion server
-│   │   └── vector_store.py       # In-memory Qdrant client utility
+│   │   └── vector_store.py       # Persistent Qdrant client utility
 │   ├── monitoring/               # Tabular Feature Drift Engine
 │   │   ├── api.py                # Main FastAPI Server app (with LLM sub-app mounted)
 │   │   ├── drift_detection.py    # Statistical tests (KS, Chi2, Cramer's V)
@@ -299,7 +303,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 ---
 
 ## Current Limitations
-*   **Transient Memory Lifecycles**: Since Qdrant runs in-memory, restarting the backend server resets active baseline/telemetry response pools, but the computed trend history is now safely persisted in SQLite.
+*   **Transient Telemetry Queues**: While baseline vector embeddings are now safely persisted in Qdrant on disk, active telemetry response queues remain transient in-memory lists and are reset upon server restarts.
 *   **Local Hardware Bottlenecks**: Processing completions on CPU/GPU via Ollama is subject to local compute latencies. However, the system's model footprint has been minimized to avoid resource exhaustion.
 
 ---
@@ -338,6 +342,8 @@ ML and LLM deployments suffer from silent degradation. Standard APM tools (e.g. 
 *   **Stale Dashboard Telemetry Trends & SQLite Persistence**: Resolved a bug where the `/drift` evaluation endpoint generated metrics but failed to store them. Implemented a persistent SQLite database storage mechanism (`drift_history.db`) in the backend to record and load scores across server restarts, resolving the flat dashboard trend line and maintaining historical data.
 *   **Playground Prop Desynchronization**: Fixed a frontend bug where the prompt playground component was not properly bound to the parent refresh context. Corrected the signature to accept and trigger the `reload` prop on successful generation/promotion, ensuring drift metrics refresh instantly on tab switch.
 *   **Sub-App Route Conflicts**: Solved routing blockages by arranging endpoints such that specific static routes take precedence, while mounting the sub-app as a root-level fallback.
+*   **Severity-Aware Recommendations & Formatting**: Fixed a bug where recommendation action items were uniform across low/medium/high/critical severities and UI displayed raw dictionaries. Developed a severity-tiered routing prompt for the Recommendation Agent, sanitizers to filter out raw dictionaries from the response, and standard severity-specific fallback lists.
+*   **Concurrent Database Locks in Local Qdrant Storage**: Addressed parallel test-suite and reload conflicts by shifting `init_collection` to FastAPI lifespans and implementing a robust environment detection check (`is_testing`) that avoids false-positive folder locks on `qdrant_test_db` caused by implicit standard-library imports of `unittest` in the backend uvicorn process.
 
 ### Scalability Considerations
 *   **Vector Query Scaling**: In production, querying vector distances over millions of runs can be slow. Implementing collection partitions and index HNSW graphs in Qdrant ensures sub-millisecond distance lookups.
