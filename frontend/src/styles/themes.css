@@ -1,0 +1,297 @@
+:root, html[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #041421;
+  --page-deep: #020d17;
+  --panel: #171c23;
+  --panel-strong: #1f252e;
+  --panel-soft: #0c2031;
+  --line: #2b3948;
+  --line-soft: #172a3a;
+  --text: #e9f7ff;
+  --muted: #a8b4c2;
+  --muted-strong: #c9d5df;
+  --cyan: #11d8e8;
+  --cyan-strong: #00f0ff;
+  --cyan-soft: rgba(17, 216, 232, 0.16);
+  --violet: #b7a6ff;
+  --warning: #ffe24d;
+  --danger: #ffaca5;
+  --danger-strong: #ff4b5c;
+  --success: #8ff7c6;
+
+  /* Semantic Design Tokens (Dark Mode) */
+  --color-primary: var(--cyan);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger-strong);
+  
+  --color-bg: var(--page);
+  --color-surface: var(--panel);
+  --color-surface-secondary: var(--panel-strong);
+  
+  --color-text-primary: var(--text);
+  --color-text-secondary: var(--muted-strong);
+  
+  --color-border: var(--line);
+
+  /* Layout Visual Variables (Dark Mode) */
+  --shadow: var(--shadow-lg);
+  --top-nav-bg: rgba(3, 16, 28, 0.96);
+  --top-nav-border: var(--line-soft);
+  
+  --cyan-btn-text: #052331;
+  --cyan-btn-bg: var(--cyan);
+  --cyan-btn-border: 1px solid var(--cyan-strong);
+  --cyan-btn-shadow: var(--shadow-md);
+  --cyan-btn-hover-shadow: var(--shadow-lg);
+  
+  --outline-btn-bg: rgba(18, 29, 42, 0.72);
+  --outline-btn-hover-bg: rgba(28, 41, 56, 0.85);
+  --outline-btn-hover-border: var(--line);
+  
+  --marketing-bg: linear-gradient(180deg, #03101c 0%, #071c2c 52%, #041421 100%);
+  --dot-color: rgba(83, 148, 179, 0.18);
+  --dot-gradient: linear-gradient(180deg, rgba(7, 29, 45, 0.3), rgba(7, 29, 45, 0));
+  --marketing-pattern-size: 42px 42px, 100% 100%;
+  --hero-glow-bg: radial-gradient(circle at 50% 30%, rgba(17, 216, 232, 0.15), transparent 60%);
+  
+  --signal-badge-border: 1px solid rgba(183, 166, 255, 0.62);
+  --signal-badge-color: #f5f0ff;
+  --signal-badge-bg: rgba(83, 67, 158, 0.56);
+  --signal-badge-shadow: var(--shadow-sm);
+  
+  --brand-gradient: linear-gradient(90deg, #cbd5f5 0%, #60a5fa 60%, #22d3ee 100%);
+  
+  --feature-card-bg: linear-gradient(135deg, rgba(23, 28, 35, 0.6), rgba(10, 30, 45, 0.6));
+  --feature-card-backdrop: blur(18px);
+  --feature-card-border: 1px solid rgba(255, 255, 255, 0.04);
+  --feature-card-shadow: var(--shadow-lg);
+  --feature-card-hover-shadow: var(--shadow-lg);
+  
+  --vector-cube-pattern: radial-gradient(circle at center, rgba(17, 216, 232, 0.25), transparent 40%), linear-gradient(90deg, rgba(6, 15, 24, 0.3), rgba(17, 216, 232, 0.05));
+  --vector-cube-border: 1px solid rgba(17, 216, 232, 0.58);
+  --vector-cube-shadow: var(--shadow-md);
+  --vector-cube-ray-bg: linear-gradient(180deg, rgba(17, 216, 232, 0.48), transparent);
+  
+  --live-pill-bg: #2a333d;
+  
+  --token-bar-inactive: linear-gradient(180deg, rgba(120, 140, 160, 0.6), rgba(80, 100, 120, 0.3));
+  --token-bar-active: linear-gradient(180deg, #22d3ee, #06b6d4);
+  --token-bar-active-shadow: var(--shadow-sm);
+  
+  --cta-bg: linear-gradient(180deg, #232932, #1c222b);
+  --cta-border: 1px solid var(--line);
+  --footer-bg: #03101c;
+  
+  --sidebar-bg: #03111e;
+  --sidebar-border: var(--line-soft);
+  --sidebar-active-bg: #151044;
+  --sidebar-active-indicator-color: var(--text);
+  
+  --bar-bg: #0b1520;
+  --table-frame-bg: #071625;
+  --th-bg: #111d2a;
+  --selected-row-bg: rgba(17, 216, 232, 0.08);
+  
+  --pill-danger-text: var(--danger);
+  --pill-danger-bg: rgba(255, 75, 92, 0.12);
+  --pill-success-text: var(--success);
+  --pill-success-bg: rgba(143, 247, 198, 0.12);
+  --pill-warning-text: var(--warning);
+  --pill-warning-bg: rgba(255, 226, 77, 0.12);
+  
+  --control-card-bg: #101a25;
+  --segmented-bg: #071625;
+  --segmented-active-color: #052331;
+  --segmented-active-bg: var(--cyan);
+  
+  --step-item-bg: rgba(12, 32, 49, 0.28);
+  
+  --badge-color: #d9e9ff;
+  --badge-bg: #152b40;
+  
+  --code-dot-color: #d8ffff;
+  --code-muted-dot-color: #758998;
+  
+  --code-bg: #061321;
+  --code-text: #d2d8df;
+  --code-border: none;
+  --textarea-border: 0;
+  
+  --notice-error-text: var(--danger);
+  --notice-error-bg: rgba(255, 75, 92, 0.1);
+  --notice-error-border: rgba(255, 172, 165, 0.36);
+  
+  --notice-live-text: var(--cyan);
+  --notice-live-bg: rgba(17, 216, 232, 0.1);
+  --notice-live-border: rgba(17, 216, 232, 0.34);
+  
+  --chart-stop-start: #11d8e8;
+  --chart-stop-end: #11d8e8;
+  
+  --panel-bg: rgba(23, 28, 35, 0.98);
+  --panel-border: 1px solid var(--line);
+  --panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  --panel-backdrop: none;
+  
+  --primary-gradient: linear-gradient(135deg, #0F766E 0%, #0891B2 50%, #14B8A6 100%);
+  --new-analysis-color: #02111b;
+  --new-analysis-bg: #e1fbff;
+  
+  --score-text: #e8fbff;
+  --score-shadow: 0 5px 0 rgba(0, 0, 0, 0.4);
+  --track-bg: #202c37;
+  --chart-line-muted: #243853;
+  --body-pattern: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  --body-pattern-size: 80px 80px;
+  --body-pattern-opacity: 0.2;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --page: #F8FAFC;
+  --page-deep: #F1F5F9;
+  --panel: #FFFFFF;
+  --panel-strong: #FFFFFF;
+  --panel-soft: #F1F5F9;
+  --line: #E2E8F0;
+  --line-soft: #E2E8F0;
+  --text: #0F172A;
+  --muted: #64748B;
+  --muted-strong: #475569;
+  --cyan: #0F766E;
+  --cyan-strong: #0891B2;
+  --cyan-soft: rgba(20, 184, 166, 0.08);
+  --violet: #14B8A6;
+  --warning: #F59E0B;
+  --danger: #FEE2E2;
+  --danger-strong: #EF4444;
+  --success: #22C55E;
+
+  /* Semantic Design Tokens (Light Mode) */
+  --color-primary: var(--cyan);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger-strong);
+  
+  --color-bg: var(--page);
+  --color-surface: var(--panel);
+  --color-surface-secondary: var(--panel-soft);
+  
+  --color-text-primary: var(--text);
+  --color-text-secondary: var(--muted-strong);
+  
+  --color-border: var(--line);
+
+  /* Layout Visual Variables (Light Mode) */
+  --shadow: var(--shadow-md);
+  --body-pattern: radial-gradient(circle, rgba(15, 118, 110, 0.03) 1px, transparent 1.5px);
+  --body-pattern-size: 60px 60px;
+  --body-pattern-opacity: 0.8;
+  
+  --top-nav-bg: rgba(255, 255, 255, 0.85);
+  --top-nav-border: var(--line);
+  
+  --cyan-btn-text: #FFFFFF;
+  --cyan-btn-bg: var(--primary-gradient);
+  --cyan-btn-border: none;
+  --cyan-btn-shadow: var(--shadow-sm);
+  --cyan-btn-hover-shadow: var(--shadow-md);
+  
+  --outline-btn-bg: #FFFFFF;
+  --outline-btn-hover-bg: var(--page-deep);
+  --outline-btn-hover-border: var(--muted);
+  
+  --marketing-bg: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  --dot-color: rgba(15, 118, 110, 0.05);
+  --dot-gradient: linear-gradient(180deg, rgba(241, 245, 249, 0.4), rgba(241, 245, 249, 0));
+  --marketing-pattern-size: 42px 42px, 100% 100%;
+  --hero-glow-bg: radial-gradient(circle at 50% 30%, rgba(20, 184, 166, 0.08), transparent 60%);
+  
+  --signal-badge-border: 1px solid rgba(15, 118, 110, 0.15);
+  --signal-badge-color: var(--cyan);
+  --signal-badge-bg: rgba(15, 118, 110, 0.05);
+  --signal-badge-shadow: var(--shadow-sm);
+  
+  --brand-gradient: var(--primary-gradient);
+  
+  --feature-card-bg: rgba(255, 255, 255, 0.75);
+  --feature-card-backdrop: blur(16px);
+  --feature-card-border: 1px solid rgba(255, 255, 255, 0.4);
+  --feature-card-shadow: var(--shadow);
+  --feature-card-hover-shadow: var(--shadow);
+  
+  --vector-cube-pattern: radial-gradient(circle at center, rgba(20, 184, 166, 0.12), transparent 45%), linear-gradient(90deg, rgba(241, 245, 249, 0.3), rgba(20, 184, 166, 0.02));
+  --vector-cube-border: 1px solid rgba(20, 184, 166, 0.3);
+  --vector-cube-shadow: var(--shadow-md);
+  --vector-cube-ray-bg: linear-gradient(180deg, rgba(20, 184, 166, 0.3), transparent);
+  
+  --live-pill-bg: rgba(15, 118, 110, 0.06);
+  
+  --token-bar-inactive: linear-gradient(180deg, rgba(8, 145, 178, 0.4), rgba(20, 184, 166, 0.1));
+  --token-bar-active: var(--primary-gradient);
+  --token-bar-active-shadow: var(--shadow-sm);
+  
+  --cta-bg: #FFFFFF;
+  --cta-border: 1px solid var(--line);
+  --footer-bg: var(--page-deep);
+  
+  --sidebar-bg: #FFFFFF;
+  --sidebar-border: var(--line);
+  --sidebar-active-bg: rgba(15, 118, 110, 0.06);
+  --sidebar-active-indicator-color: var(--cyan);
+  
+  --bar-bg: #E2E8F0;
+  --table-frame-bg: #FFFFFF;
+  --th-bg: #F1F5F9;
+  --selected-row-bg: rgba(15, 118, 110, 0.06);
+  
+  --pill-danger-text: var(--danger-strong);
+  --pill-danger-bg: rgba(239, 68, 68, 0.08);
+  --pill-success-text: var(--success);
+  --pill-success-bg: rgba(34, 197, 94, 0.08);
+  --pill-warning-text: var(--warning);
+  --pill-warning-bg: rgba(245, 158, 11, 0.08);
+  
+  --control-card-bg: #FFFFFF;
+  --segmented-bg: #F1F5F9;
+  --segmented-active-color: #FFFFFF;
+  --segmented-active-bg: var(--cyan);
+  
+  --step-item-bg: #FFFFFF;
+  
+  --badge-color: var(--cyan);
+  --badge-bg: rgba(15, 118, 110, 0.08);
+  
+  --code-dot-color: #14B8A6;
+  --code-muted-dot-color: #94A3B8;
+  
+  --code-bg: #F8FAFC;
+  --code-text: #334155;
+  --code-border: 1px solid var(--line);
+  --textarea-border: 1px solid var(--line);
+  
+  --notice-error-text: var(--danger-strong);
+  --notice-error-bg: rgba(239, 68, 68, 0.08);
+  --notice-error-border: rgba(239, 68, 68, 0.16);
+  
+  --notice-live-text: var(--primary-gradient);
+  --notice-live-bg: rgba(15, 118, 110, 0.08);
+  --notice-live-border: rgba(15, 118, 110, 0.2);
+  
+  --chart-stop-start: #0F766E;
+  --chart-stop-end: #14B8A6;
+  
+  --panel-bg: rgba(255, 255, 255, 0.75);
+  --panel-border: 1px solid rgba(255, 255, 255, 0.4);
+  --panel-shadow: var(--shadow-md);
+  --panel-backdrop: blur(16px);
+  
+  --new-analysis-color: #FFFFFF;
+  --new-analysis-bg: var(--primary-gradient);
+  
+  --score-text: var(--text);
+  --score-shadow: none;
+  --track-bg: var(--panel-soft);
+  --chart-line-muted: #94A3B8;
+}

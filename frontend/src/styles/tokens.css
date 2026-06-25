@@ -1,0 +1,48 @@
+:root {
+  /* Typography System semantic tokens */
+  --font-display: 7rem;
+  --font-h1: 2.75rem;
+  --font-h2: 2.4rem;
+  --font-h3: 1.25rem;
+  --font-body: 1rem;
+  --font-caption: 0.78rem;
+
+  /* Consistent Font Weights */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+  --weight-black: 900;
+  --weight-extrablack: 950;
+
+  /* Consistent Line Heights */
+  --lh-none: 1;
+  --lh-tight: 1.08;
+  --lh-snug: 1.15;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.6;
+
+  /* Spacing System tokens */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 30px;
+  --space-10: 36px;
+  --space-12: 44px;
+
+  /* Border Radius System tokens */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* Shadow System (subtle SaaS shadows, no glow) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
