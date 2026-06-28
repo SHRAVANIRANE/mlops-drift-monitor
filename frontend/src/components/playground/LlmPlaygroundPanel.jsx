@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { SlidersHorizontal, Loader2, Zap, Database, Table2, AlertTriangle } from "lucide-react";
+import {
+  SlidersHorizontal,
+  Loader2,
+  Zap,
+  Database,
+  Table2,
+  AlertTriangle,
+  CheckCircle,
+  Send,
+  Copy,
+  RefreshCw,
+} from "lucide-react";
 import { fetchLlmSamples, generateLlmResponse, setLlmBaseline } from "../../services/api";
-import CodePane from "../ui/CodePane";
 import Panel from "../ui/Panel";
 import Button from "../ui/Button";
-import SectionHeader from "../ui/SectionHeader";
+import Badge from "../ui/Badge";
+import CodePane from "../ui/CodePane";
 
 export default function LlmPlaygroundPanel({ reload }) {
   const [prompt, setPrompt] = useState("");
@@ -70,106 +81,313 @@ export default function LlmPlaygroundPanel({ reload }) {
   }
 
   return (
-    <div className="dashboardStack">
-      <Panel className="settingsPanel">
-        <SectionHeader
-          variant="comparison"
-          title="Interactive LLM Playground"
-          icon={SlidersHorizontal}
-        />
+    <div className="llmMonitoringStack">
+      {/* Status Notice */}
+      {loading && (
+        <div className="llmStatusNotice">
+          <Loader2 size={16} className="spinner" />
+          <span>Loading playground data...</span>
+        </div>
+      )}
 
-        <div className="playgroundGrid" style={{ padding: "30px" }}>
+      {/* Error Banner */}
+      {error && (
+        <div className="apiNotice">
+          <AlertTriangle size={18} />
+          {error}
+        </div>
+      )}
+
+      {/* Success Banner */}
+      {success && (
+        <div className="apiNotice live">
+          <CheckCircle size={18} />
+          {success}
+        </div>
+      )}
+
+      {/* KPI Cards Row */}
+      <section className="llmKpiGrid">
+        <div className="llmKpiCard">
+          <div className="llmKpiHeader">
+            <span className="llmKpiLabel">Baseline Size</span>
+            <Database size={14} className="llmKpiIcon" />
+          </div>
+          <div className="llmKpiValue llmKpiValue--md">
+            {loading ? "--" : samples?.baseline?.length ?? 0}
+          </div>
+          <div className="llmKpiFooter">
+            <span className="llmKpiSubLabel">Reference response embeddings</span>
+          </div>
+        </div>
+
+        <div className="llmKpiCard">
+          <div className="llmKpiHeader">
+            <span className="llmKpiLabel">Telemetry Size</span>
+            <Zap size={14} className="llmKpiIcon" />
+          </div>
+          <div className="llmKpiValue llmKpiValue--md">
+            {loading ? "--" : samples?.current?.length ?? 0}
+          </div>
+          <div className="llmKpiFooter">
+            <span className="llmKpiSubLabel">Current session responses</span>
+          </div>
+        </div>
+
+        <div className="llmKpiCard">
+          <div className="llmKpiHeader">
+            <span className="llmKpiLabel">Status</span>
+            <RefreshCw size={14} className="llmKpiIcon" />
+          </div>
+          <div className="llmKpiValue llmKpiValue--md" style={{ fontSize: "1.2rem" }}>
+            {generating ? "Generating..." : baselineSetting ? "Saving..." : "Ready"}
+          </div>
+          <div className="llmKpiFooter">
+            <span className="llmKpiSubLabel">
+              {samples?.current?.length > 0 && samples?.baseline?.length > 0
+                ? "Can calculate drift"
+                : "Generate responses to begin"}
+            </span>
+          </div>
+        </div>
+
+        <div className="llmKpiCard">
+          <div className="llmKpiHeader">
+            <span className="llmKpiLabel">Model</span>
+            <SlidersHorizontal size={14} className="llmKpiIcon" />
+          </div>
+          <div className="llmKpiValue llmKpiValue--md" style={{ fontSize: "1.2rem" }}>
+            smollm:135m
+          </div>
+          <div className="llmKpiFooter">
+            <span className="llmKpiSubLabel">Local Ollama instance</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Prompt Input Panel */}
+      <Panel className="llmRcaPanel">
+        <div className="llmRcaHeader">
+          <div className="llmRcaHeaderLeft">
+            <Send size={16} />
+            <span>Prompt Input</span>
+            <span className="llmRcaAutoTag">Interactive</span>
+          </div>
+        </div>
+
+        <div className="llmRcaContent">
           <form onSubmit={handleGenerate}>
-            <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
-              Test Prompt
-            </label>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <input
-                type="text"
-                className="promptInput"
-                placeholder="Enter a prompt (e.g., 'How to cook pasta?')"
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div className="llmRcaSectionLabel">Enter your prompt below</div>
+              <textarea
+                className="promptTextarea"
+                placeholder="Type a prompt to test the LLM (e.g., 'Explain semantic drift in machine learning')"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={generating}
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-border)",
+                  background: "var(--code-bg)",
+                  color: "var(--color-text-primary)",
+                  fontSize: "1rem",
+                  lineHeight: "1.6",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
               />
-              <Button variant="cyan" compact type="submit" disabled={generating || !prompt.trim()}>
-                {generating ? (
-                  <span className="spinnerLabel">
-                    <Loader2 size={16} className="spinner" />
-                  </span>
-                ) : (
-                  <Zap size={16} />
-                )}
-                Generate
-              </Button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setPrompt("")}
+                  disabled={generating || !prompt.trim()}
+                >
+                  Clear
+                </Button>
+                <Button
+                  variant="amber"
+                  type="submit"
+                  disabled={generating || !prompt.trim()}
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 size={16} className="spinner" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Zap size={16} />
+                      Generate Response
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
+        </div>
+      </Panel>
 
-          {error && (
-            <div className="apiNotice" style={{ marginTop: "15px" }}>
-              <AlertTriangle size={18} />
-              {error}
+      {/* Last Response Panel */}
+      {lastResponse && (
+        <Panel className="llmRcaPanel">
+          <div className="llmRcaHeader">
+            <div className="llmRcaHeaderLeft">
+              <Zap size={16} />
+              <span>Last Generated Response</span>
+              <Badge variant="label" tone="stable">
+                New
+              </Badge>
             </div>
-          )}
+            <span className="overviewRcaTime">{lastResponse.timestamp || "Just now"}</span>
+          </div>
 
-          {success && (
-            <div className="apiNotice live" style={{ marginTop: "15px" }}>
-              <Zap size={18} />
-              {success}
+          <div className="llmRcaContent">
+            <div className="llmRcaSection">
+              <span className="llmRcaSectionLabel">Prompt Submitted</span>
+              <p className="llmRcaText">{lastResponse.prompt}</p>
             </div>
-          )}
+            <div className="llmRcaSection" style={{ marginTop: "16px" }}>
+              <span className="llmRcaSectionLabel">Model Response</span>
+              <div
+                style={{
+                  marginTop: "8px",
+                  padding: "16px",
+                  borderRadius: "6px",
+                  background: "var(--code-bg)",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-primary)",
+                  fontSize: "0.95rem",
+                  lineHeight: "1.7",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {lastResponse.response}
+              </div>
+            </div>
+          </div>
+        </Panel>
+      )}
 
-          {lastResponse && (
-            <div style={{ marginTop: "20px" }}>
-              <h3 style={{ marginBottom: "8px" }}>Last Response</h3>
-              <CodePane
-                title={`Prompt: "${lastResponse.prompt}"`}
-                code={lastResponse.response}
-              />
-            </div>
-          )}
+      {/* Baseline Management Panel */}
+      <Panel className="llmRcaPanel">
+        <div className="llmRcaHeader">
+          <div className="llmRcaHeaderLeft">
+            <Database size={16} />
+            <span>Baseline Management</span>
+            <span className="llmRcaAutoTag">Drift Reference</span>
+          </div>
+        </div>
 
-          <div className="playgroundActionRow" style={{ marginTop: "30px", borderTop: "1px solid var(--line)", paddingTop: "20px" }}>
-            <div>
-              <h3>Establish Baseline</h3>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginTop: "4px" }}>
-                Prompts generated during this session will be captured as the current distribution. Click below to promote them as the new drift baseline.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              type="button"
-              onClick={handleSetBaseline}
-              disabled={baselineSetting || !samples?.current?.length}
-              style={{ marginLeft: "auto" }}
+        <div className="llmRcaContent">
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <p className="llmRcaSubtext">
+              Prompts generated during this session will be captured as the current distribution.
+              Click below to promote them as the new drift baseline for semantic monitoring.
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+              }}
             >
-              {baselineSetting ? (
-                <span className="spinnerLabel">
-                  <Loader2 size={16} className="spinner" />
-                </span>
-              ) : (
-                <Database size={16} />
-              )}
-              Set Baseline
-            </Button>
+              <div
+                style={{
+                  padding: "16px",
+                  borderRadius: "6px",
+                  background: "rgba(255, 255, 255, 0.02)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                <div className="llmRcaSectionLabel" style={{ marginBottom: "8px" }}>
+                  Current Telemetry
+                </div>
+                <div
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: "900",
+                    color: "var(--amber, #f59e0b)",
+                  }}
+                >
+                  {samples?.current?.length ?? 0}
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--color-text-secondary)" }}>
+                  responses ready
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "16px",
+                  borderRadius: "6px",
+                  background: "rgba(255, 255, 255, 0.02)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                <div className="llmRcaSectionLabel" style={{ marginBottom: "8px" }}>
+                  Existing Baseline
+                </div>
+                <div
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: "900",
+                    color: "#67e8f9",
+                  }}
+                >
+                  {samples?.baseline?.length ?? 0}
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--color-text-secondary)" }}>
+                  reference samples
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={handleSetBaseline}
+                disabled={baselineSetting || !samples?.current?.length}
+              >
+                {baselineSetting ? (
+                  <>
+                    <Loader2 size={16} className="spinner" />
+                    Setting Baseline...
+                  </>
+                ) : (
+                  <>
+                    <Database size={16} />
+                    Promote to Baseline
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </Panel>
 
-      <Panel className="comparisonPanel">
-        <SectionHeader
-          variant="comparison"
-          title="Drift Samples Status"
-          badge="Active Pools"
-          icon={Table2}
-        />
+      {/* Response Pools Comparison */}
+      <Panel className="llmSamplesPanel">
+        <div className="llmSamplesHeader">
+          <div className="llmSamplesHeaderLeft">
+            <Table2 size={16} />
+            <span>Response Pools</span>
+          </div>
+          <span className="llmSamplesBadge">Side-by-Side</span>
+        </div>
+
         {loading ? (
           <div className="apiNotice live" style={{ margin: "20px" }}>
             <Loader2 size={18} className="spinner" />
-            Loading active pools...
+            Loading response pools...
           </div>
         ) : (
-          <div className="comparisonGrid">
+          <div className="llmSamplesGrid">
             <CodePane
               title={`Baseline Responses (${samples?.baseline?.length || 0})`}
               muted
