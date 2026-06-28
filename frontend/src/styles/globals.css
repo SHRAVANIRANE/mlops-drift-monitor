@@ -36,6 +36,11 @@ button {
   cursor: pointer;
 }
 
+:where(button, a, input, select, textarea, summary, [role="button"]):focus-visible {
+  outline: 2px solid var(--cyan-strong);
+  outline-offset: 2px;
+}
+
 button:disabled,
 input:disabled {
   cursor: not-allowed;
@@ -119,8 +124,11 @@ p {
 }
 
 .signinButton {
-  min-height: 42px;
-  padding: 0;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-5);
   color: var(--color-text-primary);
   font-weight: var(--weight-bold);
 }
@@ -135,7 +143,11 @@ p {
   gap: var(--space-3);
   padding: 0 var(--space-10);
   border-radius: var(--radius-sm);
-  font-weight: var(--weight-extrabold);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cyanButton {
@@ -143,16 +155,15 @@ p {
   border: var(--cyan-btn-border);
   background: var(--cyan-btn-bg);
   box-shadow: var(--cyan-btn-shadow);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cyanButton:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--cyan-btn-hover-shadow);
 }
 
 .cyanButton.compact {
-  min-height: 50px;
+  min-height: 46px;
   padding: 0 var(--space-8);
 }
 
@@ -161,13 +172,13 @@ p {
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
   background: var(--outline-btn-bg);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .outlineButton:hover,
 .historyButton:hover {
   background: var(--outline-btn-hover-bg);
   border-color: var(--outline-btn-hover-border);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
@@ -187,21 +198,22 @@ p {
 .marketingHero {
   min-height: 720px;
   display: grid;
-  place-items: center;
+    padding: var(--space-6) var(--space-8) 0;
   padding: 120px var(--space-6) 150px;
 }
 
 .marketingHero::before {
   content: "";
   position: absolute;
-  inset: 0;
+    padding: var(--space-10) var(--space-8) 0;
   background: var(--hero-glow-bg);
   pointer-events: none;
 }
 
 .heroInner {
   width: min(820px, 100%);
-  text-align: center;
+    min-height: 52px;
+    padding: 12px var(--space-5);
 }
 
 .signalBadge,
@@ -267,19 +279,21 @@ p {
   grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
   gap: var(--space-5);
   width: min(1460px, calc(100% - 56px));
-  margin: 0 auto 110px;
 }
-
 .featureCard {
   background: var(--feature-card-bg);
   backdrop-filter: var(--feature-card-backdrop);
   border: var(--feature-card-border);
   box-shadow: var(--feature-card-shadow);
-  transition: all 0.3s ease;
+  border-radius: var(--radius-lg);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .featureCard:hover {
-  transform: translateY(-6px);
+  transform: translateY(-4px);
   box-shadow: var(--feature-card-hover-shadow);
 }
 
@@ -691,10 +705,14 @@ p {
 .dashboardPanel {
   min-width: 0;
   border: var(--panel-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--panel-bg);
   box-shadow: var(--panel-shadow);
   backdrop-filter: var(--panel-backdrop);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .panelHeader {
@@ -702,7 +720,7 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-5);
-  padding: var(--space-8) var(--space-8) 0;
+  padding: var(--space-6) var(--space-8) 0;
 }
 
 .panelHeader > span,
@@ -990,7 +1008,7 @@ p {
 
 .historyButton {
   min-height: 52px;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-8);
 }
 
 .miniMetricGrid {
@@ -1006,8 +1024,18 @@ p {
   gap: 14px;
   padding: var(--space-6);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.metricTile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .metricTile svg {
@@ -1035,11 +1063,17 @@ p {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px var(--space-4);
+  min-height: 52px;
+  padding: 12px var(--space-5);
   color: var(--notice-error-text);
   border: 1px solid var(--notice-error-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--notice-error-bg);
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .apiNotice.live {
@@ -1301,6 +1335,12 @@ dd {
   padding: var(--space-6);
   border: 1px solid var(--color-border);
   background: var(--control-card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .controlCard > span,
@@ -1608,11 +1648,15 @@ dd {
 }
 
 .emptyStatePanel {
-  padding: var(--space-12);
+  padding: var(--space-10);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--panel-bg);
   box-shadow: var(--panel-shadow);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .emptyStateContent {
@@ -1654,8 +1698,17 @@ dd {
   padding: var(--space-6);
   border: 1px solid var(--top-nav-border);
   background: var(--step-item-bg);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   text-align: center;
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stepItem:hover {
+  transform: translateY(-2px);
 }
 
 .stepNumber {
@@ -1724,12 +1777,16 @@ dd {
   color: var(--color-text-primary);
   cursor: pointer;
   outline: none;
-  transition: all 0.25s ease;
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .themeToggle:hover {
   background: var(--panel-soft);
-  transform: scale(1.05);
+  transform: translateY(-1px);
 }
 
 .themeToggle:focus-visible {
@@ -4264,12 +4321,18 @@ html[data-theme="light"] .overviewStatusSectionLabel {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px var(--space-5);
-  border-radius: var(--radius-sm);
+  min-height: 52px;
+  padding: 12px var(--space-5);
+  border-radius: var(--radius-lg);
   background: rgba(103, 232, 249, 0.08);
   border: 1px solid rgba(103, 232, 249, 0.2);
   color: #67e8f9;
   font-size: 0.85rem;
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html[data-theme="light"] .llmStatusNotice {
@@ -4462,19 +4525,27 @@ html[data-theme="light"] .llmStatusNotice {
 .llmKpiCard {
   padding: var(--space-6);
   border: var(--panel-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--panel-bg);
   box-shadow: var(--panel-shadow);
   backdrop-filter: var(--panel-backdrop);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.llmKpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .llmKpiHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
 }
 
@@ -4585,7 +4656,9 @@ html[data-theme="light"] .llmTrendLegendItem--threshold::before {
 
 /* ── Empty State Panel ────────────────────────────────────────────────────── */
 .llmEmptyPanel {
-  padding: var(--space-12);
+  padding: var(--space-10);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
 }
 
 .llmEmptyContent {
