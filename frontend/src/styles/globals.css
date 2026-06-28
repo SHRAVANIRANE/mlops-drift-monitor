@@ -4136,6 +4136,10 @@ html[data-theme="light"] .overviewStatusSectionLabel {
   .overviewKpiGrid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .llmKpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 960px) {
@@ -4148,6 +4152,15 @@ html[data-theme="light"] .overviewStatusSectionLabel {
   }
 
   .overviewHeroAlert {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .llmHeroCard {
+    flex-direction: column;
+  }
+
+  .llmHeroAlert {
     max-width: 100%;
     min-width: 0;
   }
@@ -4166,6 +4179,10 @@ html[data-theme="light"] .overviewStatusSectionLabel {
     grid-template-columns: 1fr;
   }
 
+  .llmKpiGrid {
+    grid-template-columns: 1fr;
+  }
+
   .dashTopNavSearch {
     display: none;
   }
@@ -4173,4 +4190,857 @@ html[data-theme="light"] .overviewStatusSectionLabel {
   .dashTopNav {
     grid-template-columns: 1fr auto;
   }
+
+  .llmRcaAgentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .llmRcaExamples {
+    grid-template-columns: 1fr;
+  }
+
+  .llmSamplesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LLM MONITORING PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Main Stack ───────────────────────────────────────────────────────────── */
+.llmMonitoringStack {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* ── Status Notice ─────────────────────────────────────────────────────────── */
+.llmStatusNotice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--space-5);
+  border-radius: var(--radius-sm);
+  background: rgba(103, 232, 249, 0.08);
+  border: 1px solid rgba(103, 232, 249, 0.2);
+  color: #67e8f9;
+  font-size: 0.85rem;
+}
+
+html[data-theme="light"] .llmStatusNotice {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.2);
+  color: #0891b2;
+}
+
+/* ── Hero Health Card ─────────────────────────────────────────────────────── */
+.llmHeroCard {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-8);
+  padding: var(--space-8);
+}
+
+.llmHeroLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Health Ring */
+.llmHealthRing {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+}
+
+.llmHealthRingSvg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.llmHealthRingProgress {
+  transition: stroke-dashoffset 0.6s ease-out;
+}
+
+.llmHealthRingValue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.llmHealthRingValue strong {
+  font-size: 2.2rem;
+  font-weight: var(--weight-extrablack);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.llmHealthRingValue span {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-bold);
+}
+
+/* Hero Info */
+.llmHeroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.llmHeroLabel {
+  font-size: 0.72rem;
+  font-weight: var(--weight-black);
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.llmHeroScoreRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.llmHeroStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: var(--weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.llmHeroStatusBadge--stable {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.llmHeroStatusBadge--warning {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--amber, #f59e0b);
+}
+
+.llmHeroStatusBadge--critical {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.llmHeroMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.llmHeroMeta svg {
+  flex-shrink: 0;
+}
+
+.llmHeroMeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.llmHeroMeta strong {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
+}
+
+/* Hero Alert */
+.llmHeroAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: var(--space-5);
+  border-radius: var(--radius-sm);
+  min-width: 220px;
+  max-width: 260px;
+  flex-shrink: 0;
+}
+
+.llmHeroAlert--warning {
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.07);
+  color: var(--amber, #f59e0b);
+}
+
+.llmHeroAlert--critical {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.07);
+  color: #f87171;
+}
+
+.llmHeroAlert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.llmHeroAlertTitle {
+  font-size: 0.82rem;
+  font-weight: var(--weight-extrabold);
+  margin-bottom: 3px;
+}
+
+.llmHeroAlertSub {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── KPI Grid ─────────────────────────────────────────────────────────────── */
+.llmKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.llmKpiCard {
+  padding: var(--space-6);
+  border: var(--panel-border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: var(--panel-backdrop);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llmKpiHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.llmKpiLabel {
+  font-size: 0.65rem;
+  font-weight: var(--weight-black);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.llmKpiIcon {
+  color: var(--amber, #f59e0b);
+}
+
+.llmKpiValue {
+  font-size: 2rem;
+  font-weight: var(--weight-extrablack);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.llmKpiValue--md {
+  font-size: 1.6rem;
+}
+
+.llmKpiFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.llmKpiSubLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Trend Panel ──────────────────────────────────────────────────────────── */
+.llmTrendPanel {
+  padding: var(--space-6);
+}
+
+.llmTrendHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+
+.llmTrendTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: var(--weight-extrabold);
+  color: var(--color-text-primary);
+}
+
+.llmTrendTitle svg {
+  color: var(--amber, #f59e0b);
+}
+
+.llmTrendLegend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.llmTrendLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-secondary);
+}
+
+.llmTrendLegendItem::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.llmTrendLegendItem--health::before {
+  background: #f59e0b;
+}
+
+.llmTrendLegendItem--threshold::before {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme="light"] .llmTrendLegendItem--threshold::before {
+  background: var(--muted);
+}
+
+.llmTrendChart {
+  margin: 0 calc(-1 * var(--space-2));
+}
+
+.llmTrendChart .lineTrend {
+  width: 100%;
+  height: 180px;
+  margin: 0;
+}
+
+/* ── Empty State Panel ────────────────────────────────────────────────────── */
+.llmEmptyPanel {
+  padding: var(--space-12);
+}
+
+.llmEmptyContent {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.llmEmptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--amber, #f59e0b);
+}
+
+.llmEmptyContent h2 {
+  font-size: 1.8rem;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-extrabold);
+  line-height: 1.2;
+}
+
+.llmEmptyContent p {
+  font-size: 1.05rem;
+  color: var(--color-text-secondary);
+  line-height: var(--lh-relaxed);
+  max-width: 560px;
+}
+
+.llmEmptySteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin: var(--space-6) 0 var(--space-8);
+  width: 100%;
+}
+
+.llmEmptyStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+html[data-theme="light"] .llmEmptyStep {
+  background: var(--panel-soft);
+}
+
+.llmEmptyStepNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber, #f59e0b);
+  font-weight: var(--weight-black);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.llmEmptyStepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llmEmptyStepContent strong {
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: var(--weight-bold);
+}
+
+.llmEmptyStepContent p {
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  line-height: var(--lh-normal);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .llmEmptySteps {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* ── RCA Panel ────────────────────────────────────────────────────────────── */
+.llmRcaPanel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.llmRcaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.llmRcaHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: var(--weight-extrabold);
+  color: var(--color-text-primary);
+}
+
+.llmRcaHeaderLeft svg {
+  color: var(--amber, #f59e0b);
+}
+
+.llmRcaAutoTag {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber, #f59e0b);
+  font-size: 0.62rem;
+  font-weight: var(--weight-black);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.llmRcaTabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+html[data-theme="light"] .llmRcaTabs {
+  background: var(--panel-soft);
+}
+
+.llmRcaTab {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.llmRcaTab:hover {
+  color: var(--color-text-primary);
+}
+
+.llmRcaTab.active {
+  background: var(--amber, #f59e0b);
+  color: #1a0f00;
+}
+
+/* RCA Content */
+.llmRcaContent {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.llmRcaSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llmRcaSectionLabel {
+  font-size: 0.62rem;
+  font-weight: var(--weight-black);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.llmRcaText {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.llmRcaSubtext {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.llmRcaExamples {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.llmRcaExampleCol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.llmRcaList {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+}
+
+/* Agent Grid */
+.llmRcaAgentGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: var(--space-5);
+}
+
+.llmRcaAgentCard {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html[data-theme="light"] .llmRcaAgentCard {
+  background: var(--panel-soft);
+}
+
+.llmRcaAgentCard--wide {
+  /* slightly wider card */
+}
+
+.llmRcaAgentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.llmRcaAgentLabel {
+  font-size: 0.72rem;
+  font-weight: var(--weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+.llmRcaConfidence {
+  font-size: 0.82rem;
+  color: #67e8f9;
+  font-weight: var(--weight-bold);
+}
+
+.llmRcaConfidenceBar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+
+html[data-theme="light"] .llmRcaConfidenceBar {
+  background: var(--line);
+}
+
+.llmRcaConfidenceFill {
+  height: 100%;
+  background: #67e8f9;
+  border-radius: 3px;
+  transition: width 0.4s ease-out;
+}
+
+.llmRcaAgentFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.llmRcaAgentField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.llmRcaFieldLabel {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.llmRcaFieldValue {
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.llmRcaFieldValue--danger {
+  color: #f87171;
+}
+
+.llmRcaFieldValue--success {
+  color: #22c55e;
+}
+
+.llmRcaFieldText {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.llmRcaFieldSubtext {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Recommendations */
+.llmRcaRecommendations {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html[data-theme="light"] .llmRcaRecommendations {
+  background: var(--panel-soft);
+}
+
+.llmRcaActionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.llmRcaActionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.92rem;
+  color: var(--color-text-primary);
+}
+
+.llmRcaActionItem--empty {
+  color: var(--color-text-secondary);
+}
+
+.llmRcaActionNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber, #f59e0b);
+  font-size: 0.72rem;
+  font-weight: var(--weight-black);
+  flex-shrink: 0;
+}
+
+.llmRcaActionText {
+  flex: 1;
+  line-height: 1.5;
+}
+
+/* Collaboration Log */
+.llmRcaLog {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--page-deep);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.llmRcaLogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.82rem;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-secondary);
+}
+
+.llmRcaLogStatus {
+  color: #67e8f9;
+  font-size: 0.72rem;
+}
+
+.llmRcaLogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llmRcaLogLine {
+  display: flex;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.llmRcaLogLine--empty {
+  color: var(--muted);
+}
+
+.llmRcaLogNum {
+  color: #67e8f9;
+  flex-shrink: 0;
+}
+
+.llmRcaLogText {
+  word-break: break-word;
+}
+
+/* ── Samples Panel ─────────────────────────────────────────────────────────── */
+.llmSamplesPanel {
+  overflow: hidden;
+}
+
+.llmSamplesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.llmSamplesHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: var(--weight-extrabold);
+  color: var(--color-text-primary);
+}
+
+.llmSamplesHeaderLeft svg {
+  color: var(--amber, #f59e0b);
+}
+
+.llmSamplesBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: var(--weight-bold);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.llmSamplesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.llmSamplesGrid .codePane {
+  border: none;
+  border-right: 1px solid var(--color-border);
+}
+
+.llmSamplesGrid .codePane:last-child {
+  border-right: none;
 }
