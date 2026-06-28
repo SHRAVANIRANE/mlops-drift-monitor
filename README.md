@@ -285,29 +285,16 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 ## Screenshots / Demo
 
 ### Product Landing Page
-<img width="1877" height="895" alt="image" src="https://github.com/user-attachments/assets/93833360-d8da-4946-9225-8150f4ffbca8" />
-*A sleek dot-matrix dashboard landing layout demonstrating real-time health indicators and drift status.*
+<img width="1895" height="845" alt="image" src="https://github.com/user-attachments/assets/e9b09d8b-1d0a-4e91-bd67-9d8d19062efa" />
 
 ### LLM Observability Dashboard
-<img width="1877" height="887" alt="image" src="https://github.com/user-attachments/assets/082527ec-0cf5-4c1c-a988-0817f2f129da" />
-*Visualizes semantic health scores, MMD metrics, active history trend lines, and the LLM-powered RCA summary.*
+<img width="1887" height="856" alt="image" src="https://github.com/user-attachments/assets/7e0cb078-c0ef-4de7-9123-b59ce4b05ebe" />
+
+### RCA Reports
+<img width="1893" height="857" alt="image" src="https://github.com/user-attachments/assets/12949789-e2d5-4e2c-a16e-64dbd327b909" />
 
 ### Interactive Playground
-<img width="1876" height="886" alt="image" src="https://github.com/user-attachments/assets/18d5fa47-ee8f-4c0d-8c8b-667f8f10dfff" />
-*Allows sandbox prompt testing, response generations, and baseline promotions.*
-
----
-
-## Current Limitations
-*   **Transient Telemetry Queues**: While baseline vector embeddings are now safely persisted in Qdrant on disk, active telemetry response queues remain transient in-memory lists and are reset upon server restarts.
-*   **Local Hardware Bottlenecks**: Processing completions on CPU/GPU via Ollama is subject to local compute latencies. However, the system's model footprint has been minimized to avoid resource exhaustion.
-
----
-
-## Future Improvements
-*   **Database Ingestion Layers**: SQLite database integration is implemented for drift history logs; future enhancements will extend this to persist raw response pools and baseline histories permanently.
-*   **Asynchronous Inference Queues**: Introduce Celery or Redis queues to process prompt generations asynchronously, preventing request timeouts.
-*   **Metric Alerting Rules**: Implement customizable drift severity thresholds to dispatch webhooks to production alerts automatically.
+<img width="1897" height="851" alt="image" src="https://github.com/user-attachments/assets/86a2f7ae-56b1-4b37-9de5-e27f079429d6" />
 
 ---
 
