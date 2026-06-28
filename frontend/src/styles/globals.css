@@ -1050,9 +1050,9 @@ p {
 
 .analysisHero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  align-items: center;
-  min-height: 260px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+  align-items: stretch;
+  min-height: 300px;
   overflow: hidden;
 }
 
@@ -1060,9 +1060,14 @@ p {
   padding: var(--space-10);
 }
 
+.analysisHero > div:last-child {
+  padding: var(--space-8) var(--space-8) var(--space-8) 0;
+  border-left: 1px solid var(--top-nav-border);
+}
+
 .analysisHero h2 {
   margin-top: 10px;
-  font-size: var(--font-h2);
+  font-size: clamp(2.2rem, 3vw, 3rem);
 }
 
 .analysisHero p {
@@ -1070,6 +1075,46 @@ p {
   margin-top: 12px;
   color: var(--color-text-secondary);
   line-height: var(--lh-relaxed);
+}
+
+.driftHeroCopy > span {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: var(--weight-black);
+  letter-spacing: 0.08em;
+}
+
+.driftHeroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: var(--space-5);
+}
+
+.driftHeroMeta span {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.driftHeroMetrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-self: center;
+}
+
+.driftHeroMetrics .metricTile {
+  min-height: 122px;
+}
+
+.driftHeroMetrics .metricTile strong {
+  font-size: 1.35rem;
+}
+
+.driftTrendFacts {
+  padding: 0 var(--space-8) var(--space-8);
 }
 
 .analysisGrid {
