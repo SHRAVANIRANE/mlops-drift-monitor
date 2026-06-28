@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function Button({
-  variant = "cyan", // cyan, outline, history, brand, signin, themeToggle, newAnalysis
+  variant = "cyan", // cyan, outline, history, brand, signin, themeToggle, newAnalysis, amber
   compact = false,
   className = "",
   children,
@@ -15,6 +15,7 @@ export default function Button({
   else if (variant === "signin") btnClass = "signinButton";
   else if (variant === "themeToggle") btnClass = "themeToggle";
   else if (variant === "newAnalysis") btnClass = "newAnalysisButton";
+  else if (variant === "amber") btnClass = compact ? "amberButton compact" : "amberButton";
 
   return (
     <button className={`${btnClass} ${className}`} {...props}>
